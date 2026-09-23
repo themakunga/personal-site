@@ -1,0 +1,60 @@
+{
+  "name": "personal-blog-site",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "pnpm --dir apps/web dev",
+    "content:import": "tsx scripts/import-content.ts",
+    "config:generate": "tsx scripts/load-site-config.ts",
+    "lint": "pnpm --dir apps/web lint",
+    "stylelint": "stylelint \"apps/web/app/assets/css/**/*.css\"",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "generate": "pnpm --dir apps/web generate"
+  },
+  "keywords": [
+    "blog",
+    "nuxt",
+    "nuxt-content",
+    "markdown",
+    "personal"
+  ],
+  "author": "Nicolas Villarroel <nicolas@42devs.cl>",
+  "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.5.1",
+      "onFail": "download"
+    }
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,jsonc,yaml,yml,md}": [
+      "prettier --write"
+    ],
+    "*.css": [
+      "stylelint --fix",
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@12.5.1",
+  "type": "module",
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "prettier": "^3.9.8",
+    "stylelint": "^17.15.0",
+    "stylelint-config-standard": "^40.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "npm:@typescript/typescript6@6.0.2",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  }
+}

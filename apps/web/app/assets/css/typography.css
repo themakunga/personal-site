@@ -1,0 +1,17 @@
+html {
+  font-family: 'JetBrains Mono', SFMono-Regular, Consolas, 'Liberation Mono', monospace;
+}
+
+body {
+  color: var(--fg);
+  line-height: 1.6;
+}
+
+a {
+  color: var(--blue);
+}
+
+code,
+pre {
+  font-family: inherit;
+}

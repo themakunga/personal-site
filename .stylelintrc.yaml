@@ -1,0 +1,5 @@
+extends:
+  - stylelint-config-standard
+rules:
+  custom-property-pattern: null
+  selector-id-pattern: '^(?:__nuxt|[a-z][a-z0-9]*(?:-[a-z0-9]+)*)$'

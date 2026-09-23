@@ -1,0 +1,77 @@
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+  - pre-push
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+
+    hooks:
+      - id: trailing-whitespace
+
+      - id: end-of-file-fixer
+
+      - id: check-yaml
+        exclude: '(^|/)pnpm-lock\.yaml$'
+
+      - id: check-json
+        exclude: '(^|/)(tsconfig(\..*)?\.json|\.vscode/.*\.json)$'
+
+      - id: check-merge-conflict
+
+      - id: check-added-large-files
+        args:
+          - --maxkb=1024
+
+  - repo: local
+
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: pnpm exec eslint --fix
+        language: unsupported
+        files: \.(js|mjs|cjs|ts|mts|cts|vue)$
+        stages:
+          - pre-commit
+
+      - id: prettier
+        name: Prettier
+        entry: pnpm exec prettier --write
+        language: unsupported
+        files: \.(js|mjs|cjs|ts|mts|cts|vue|json|jsonc|yaml|yml|md|css)$
+        exclude: '(^|/)pnpm-lock\.yaml$'
+        stages:
+          - pre-commit
+
+      - id: stylelint
+        name: Stylelint
+        entry: pnpm exec stylelint --fix
+        language: unsupported
+        files: \.(css|scss)$
+        stages:
+          - pre-commit
+
+      - id: commitlint
+        name: Commitlint
+        entry: pnpm exec commitlint --edit
+        language: unsupported
+        always_run: true
+        stages:
+          - commit-msg
+
+      - id: typecheck
+        name: TypeScript
+        entry: pnpm typecheck
+        language: unsupported
+        pass_filenames: false
+        stages:
+          - pre-push
+
+      - id: tests
+        name: Tests
+        entry: pnpm test
+        language: unsupported
+        pass_filenames: false
+        stages:
+          - pre-push
