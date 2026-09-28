@@ -11,7 +11,7 @@
       <span v-for="tech in project.stack" :key="tech" class="stack-item">{{ tech }}</span>
     </div>
 
-    <div v-if="subPages.length > 1" class="project__nav">
+    <div v-if="(subPages?.length ?? 0) > 1" class="project__nav">
       <NuxtLink
         v-for="page in subPages"
         :key="page.path"
