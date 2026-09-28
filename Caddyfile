@@ -1,0 +1,38 @@
+{
+    # Global options
+    admin off
+}
+
+:80 {
+    # Serve static site
+    root * /srv
+    file_server
+
+    # Allow only specific API paths — everything else under /api returns 404
+    handle /api/auth/* {
+        reverse_proxy api:3000
+    }
+
+    handle /api/captcha/challenge {
+        reverse_proxy api:3000
+    }
+
+    handle /api/comments/* {
+        method GET POST
+        reverse_proxy api:3000
+    }
+
+    # Deny all other /api/* paths
+    handle /api/* {
+        respond 404
+    }
+
+    # SPA fallback for Nuxt
+    handle {
+        try_files {path} /index.html
+        file_server
+    }
+
+    # Encode responses
+    encode zstd gzip
+}

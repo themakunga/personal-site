@@ -1,0 +1,50 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - edge
+    restart: unless-stopped
+    depends_on:
+      - web
+
+  web:
+    image: ghcr.io/themakunga/personal-site:latest
+    networks:
+      - edge
+      - backend
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  api:
+    image: ghcr.io/themakunga/personal-site-api:latest
+    networks:
+      - backend
+    volumes:
+      - sqlite_data:/data
+    environment:
+      - DATA_DIR=/data
+      - PUBLIC_URL=${PUBLIC_URL}
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - ALTCHA_HMAC_KEY=${ALTCHA_HMAC_KEY}
+    # Admin port exposed only on loopback
+    ports:
+      - '127.0.0.1:3001:3001'
+    restart: unless-stopped
+
+volumes:
+  sqlite_data:
+
+networks:
+  edge:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
