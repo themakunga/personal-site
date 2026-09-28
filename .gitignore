@@ -20,6 +20,8 @@ content-source/
 temp/
 # Runtime data
 .data/
+data/
+apps/data/
 *.sqlite
 *.sqlite3
 *.db
