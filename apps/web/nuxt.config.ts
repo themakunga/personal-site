@@ -9,4 +9,9 @@ export default defineNuxtConfig({
     '~/assets/css/typography.css',
     '~/assets/css/main.css',
   ],
+  nitro: {
+    prerender: {
+      crawlLinks: true,
+    },
+  },
 })

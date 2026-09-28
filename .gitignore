@@ -9,9 +9,10 @@ node_modules/
 dist/
 # Generated content/config
 generated/
-apps/web/content/posts/
+apps/web/app/app.config.ts
+apps/web/content/post/
 apps/web/content/portfolio/
-apps/web/public/assets/generated/
+apps/web/public/assets/
 # Local imported content
 .content-source/
 content-source/

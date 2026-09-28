@@ -29,9 +29,10 @@ repos:
     hooks:
       - id: eslint
         name: ESLint
-        entry: pnpm exec eslint --fix
+        entry: pnpm exec eslint --fix --config apps/web/eslint.config.mjs
         language: unsupported
         files: \.(js|mjs|cjs|ts|mts|cts|vue)$
+        exclude: '(^|/)apps/web/\.(nuxt|output)/'
         stages:
           - pre-commit
 
