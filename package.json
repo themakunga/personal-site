@@ -1,10 +1,11 @@
 {
-  "name": "personal-blog-site",
+  "name": "personal-site",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "dev": "pnpm --dir apps/web dev",
+    "dev:api": "pnpm --dir apps/api dev",
     "content:import": "tsx scripts/import-content.ts",
     "config:generate": "tsx scripts/load-site-config.ts",
     "lint": "pnpm --dir apps/web lint",
