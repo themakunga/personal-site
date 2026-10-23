@@ -12,7 +12,7 @@ export default defineContentConfig({
         category: z.string().optional(),
         tags: z.array(z.string()).default([]),
         draft: z.boolean().default(false),
-        audio: z.enum(['es-MX', 'en-US']).optional(),
+        audio: z.enum(['es-CL', 'es-MX', 'en-US']).optional(),
       }),
     }),
     portfolio: defineCollection({

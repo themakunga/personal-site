@@ -15,6 +15,7 @@ from pathlib import Path
 import yaml
 
 VOICES = {
+    "es-CL": "es_AR-daniela-high",
     "es-MX": "es_MX-ald-medium",
     "en-US": "en_US-lessac-medium",
 }

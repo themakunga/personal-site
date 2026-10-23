@@ -13,10 +13,10 @@ The site is available at http://localhost:8080. Changes to the web app reload au
 Add `audio` to a post frontmatter to generate an MP3 with Piper:
 
 ```yaml
-audio: es-MX # Latin American Spanish
+audio: es-CL # Chilean Spanish
 ```
 
-The supported values are `es-MX` and `en-US`. While the local stack is running, the `tts` container watches `../personal-content/posts` and regenerates changed articles. Models and generation hashes stay in Docker volumes; generated files are written to `apps/web/public/audio` and are not committed.
+The supported values are `es-CL`, `es-MX`, and `en-US`. Piper does not currently provide an official Chilean model, so `es-CL` uses the high-quality Argentine `es_AR-daniela-high` voice as the closest regional option. While the local stack is running, the `tts` container watches `../personal-content/posts` and regenerates changed articles. Models and generation hashes stay in Docker volumes; generated files are written to `apps/web/public/audio` and are not committed.
 
 ```sh
 make audio        # Generate changed articles

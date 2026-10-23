@@ -13,13 +13,13 @@ class GenerateAudioTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             article = Path(directory) / "article.md"
             article.write_text(
-                "---\ntitle: Test\naudio: es-MX\n---\n# Title\nA [link](https://example.com).\n```js\nignored()\n```\n",
+                "---\ntitle: Test\naudio: es-CL\n---\n# Title\nA [link](https://example.com).\n```js\nignored()\n```\n",
                 encoding="utf-8",
             )
 
             language, markdown = read_article(article)
 
-        self.assertEqual(language, "es-MX")
+        self.assertEqual(language, "es-CL")
         self.assertEqual(markdown_to_text(markdown), "Title A link.")
 
     def test_rejects_unknown_language(self) -> None:
