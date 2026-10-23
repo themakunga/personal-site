@@ -8,6 +8,10 @@
           #{{ tag }}
         </NuxtLink>
       </div>
+      <audio v-if="post.audio" class="post__audio" controls preload="metadata">
+        <source :src="audioSrc" type="audio/mpeg" />
+        Tu navegador no puede reproducir este audio.
+      </audio>
     </header>
 
     <div class="post__body prose">
@@ -32,6 +36,7 @@ const slugParts = computed(() => {
 })
 
 const contentPath = computed(() => `/post/${slugParts.value.join('/')}`)
+const audioSrc = computed(() => `/audio/${slugParts.value.join('/')}.mp3`)
 
 const { data: post } = await useAsyncData(`post-${contentPath.value}`, () =>
   queryCollection('post').path(contentPath.value).first(),
@@ -78,6 +83,11 @@ useSeoMeta({
   display: flex;
   gap: 0.5rem;
   margin-top: 0.5rem;
+}
+
+.post__audio {
+  width: 100%;
+  margin-top: 1rem;
 }
 
 .tag {

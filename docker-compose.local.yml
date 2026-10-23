@@ -1,4 +1,21 @@
 services:
+  tts:
+    build:
+      context: .
+      dockerfile: docker/tts.Dockerfile
+    command: ['--watch']
+    environment:
+      CONTENT_DIR: /content/posts
+      OUTPUT_DIR: /output
+      CACHE_DIR: /cache
+      VOICES_DIR: /voices
+    volumes:
+      - ../personal-content:/content:ro
+      - ./apps/web/public/audio:/output
+      - ./scripts:/app/scripts:ro
+      - tts_audio_cache:/cache
+      - tts_voice_models:/voices
+
   web:
     build:
       context: .
@@ -50,3 +67,5 @@ services:
 
 volumes:
   local_sqlite_data:
+  tts_audio_cache:
+  tts_voice_models:
