@@ -1,15 +1,13 @@
 <template>
   <div class="about">
     <h2 class="page-title">About</h2>
-    <p class="about__bio">{{ config.profile.description }}</p>
+    <p class="about__bio">{{ config.site.description }}</p>
 
     <div class="about__contact">
       <a :href="`mailto:${config.profile.email}`" class="about__email">
         {{ config.profile.email }}
       </a>
     </div>
-
-    <SocialLinks />
   </div>
 </template>
 
@@ -18,7 +16,7 @@ const config = useAppConfig()
 
 useSeoMeta({
   title: `About — ${config.site.name}`,
-  description: config.profile.description,
+  description: config.site.description,
 })
 </script>
 

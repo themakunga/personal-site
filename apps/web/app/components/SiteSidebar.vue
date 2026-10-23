@@ -14,7 +14,7 @@
       <a class="sidebar__link" :href="`mailto:${config.profile.email}`">{{
         config.profile.email
       }}</a>
-      <SocialLinks />
+      <SocialLinks v-if="config.social.length" />
     </section>
 
     <nav v-if="config.blog.showCategories && categories.length" aria-label="Categorías">
@@ -120,5 +120,11 @@ const tags = computed(() =>
 
 .sidebar__filters--tags {
   flex-direction: row;
+}
+
+@media (max-width: 720px) {
+  .sidebar :deep(.social-links) {
+    display: none;
+  }
 }
 </style>
