@@ -17,8 +17,11 @@
         reverse_proxy api:3000
     }
 
-    handle /api/comments/* {
+    @comments {
+        path /api/comments/*
         method GET POST
+    }
+    handle @comments {
         reverse_proxy api:3000
     }
 

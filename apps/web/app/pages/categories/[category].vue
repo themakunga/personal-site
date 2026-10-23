@@ -22,14 +22,16 @@
 <script setup lang="ts">
 const config = useAppConfig()
 const route = useRoute()
-const category = route.params.category as string
+const category = computed(() => String(route.params.category))
 
-const { data: posts } = await useAsyncData(`category-${category}`, () =>
-  queryCollection('post')
-    .where('draft', '=', false)
-    .where('category', '=', category)
-    .order('date', 'DESC')
-    .all(),
+const { data: posts } = await useAsyncData(
+  () => `category-${category.value}`,
+  () =>
+    queryCollection('post')
+      .where('draft', '=', false)
+      .where('category', '=', category.value)
+      .order('date', 'DESC')
+      .all(),
 )
 
 const formatDate = (d: Date | string) =>
@@ -39,7 +41,7 @@ const formatDate = (d: Date | string) =>
     day: '2-digit',
   })
 
-useSeoMeta({ title: `${category} — ${config.site.name}` })
+useSeoMeta({ title: () => `${category.value} — ${config.site.name}` })
 </script>
 
 <style scoped>

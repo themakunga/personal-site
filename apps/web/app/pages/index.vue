@@ -1,14 +1,5 @@
 <template>
   <div class="home">
-    <section class="home__profile">
-      <p class="home__bio">{{ config.profile.description }}</p>
-      <ul class="home__social">
-        <li v-for="link in config.social" :key="link.id">
-          <a :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
-        </li>
-      </ul>
-    </section>
-
     <section class="home__posts">
       <h2>Últimas entradas</h2>
       <ul class="post-list">
@@ -50,28 +41,6 @@ useSeoMeta({
 .home {
   display: grid;
   gap: 3rem;
-}
-
-.home__bio {
-  color: var(--fg-muted);
-  white-space: pre-line;
-}
-
-.home__social {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.home__social a {
-  color: var(--comment);
-  font-size: 0.85rem;
-}
-
-.home__social a:hover {
-  color: var(--cyan);
 }
 
 h2 {

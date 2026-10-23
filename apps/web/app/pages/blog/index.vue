@@ -2,12 +2,6 @@
   <div>
     <h2 class="page-title">Blog</h2>
 
-    <div v-if="config.blog.showTags && allTags.length" class="tag-cloud">
-      <NuxtLink v-for="tag in allTags" :key="tag" :to="`/tags/${tag}`" class="tag">
-        #{{ tag }}
-      </NuxtLink>
-    </div>
-
     <ul class="post-list">
       <li v-for="post in posts" :key="post.path" class="post-list__item">
         <NuxtLink :to="`/blog${post.path.replace('/post', '')}`" class="post-list__link">
@@ -31,10 +25,6 @@ const { data: posts } = await useAsyncData('blog-posts', () =>
   queryCollection('post').where('draft', '=', false).order('date', 'DESC').all(),
 )
 
-const allTags = computed(() =>
-  [...new Set((posts.value ?? []).flatMap((p) => p.tags ?? []))].sort(),
-)
-
 const formatDate = (d: Date | string) =>
   new Date(d).toLocaleDateString(config.site.language, {
     year: 'numeric',
@@ -52,23 +42,6 @@ useSeoMeta({ title: `Blog — ${config.site.name}` })
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
-}
-
-.tag-cloud {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-}
-
-.tag {
-  color: var(--purple);
-  font-size: 0.8rem;
-  text-decoration: none;
-}
-
-.tag:hover {
-  color: var(--cyan);
 }
 
 .post-list {

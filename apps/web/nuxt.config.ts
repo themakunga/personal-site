@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxt/content', '@nuxt/eslint'],
+  vite: {
+    server: {
+      watch: { usePolling: process.env.WATCH_POLLING === 'true' },
+    },
+  },
   css: [
     '~/assets/css/reset.css',
     '~/assets/css/theme.css',

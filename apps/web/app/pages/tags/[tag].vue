@@ -22,12 +22,15 @@
 <script setup lang="ts">
 const config = useAppConfig()
 const route = useRoute()
-const tag = route.params.tag as string
+const tag = computed(() => String(route.params.tag))
 
-const { data: posts } = await useAsyncData(`tag-${tag}`, async () => {
-  const all = await queryCollection('post').where('draft', '=', false).order('date', 'DESC').all()
-  return all.filter((p) => p.tags?.includes(tag))
-})
+const { data: posts } = await useAsyncData(
+  () => `tag-${tag.value}`,
+  async () => {
+    const all = await queryCollection('post').where('draft', '=', false).order('date', 'DESC').all()
+    return all.filter((p) => p.tags?.includes(tag.value))
+  },
+)
 
 const formatDate = (d: Date | string) =>
   new Date(d).toLocaleDateString(config.site.language, {
@@ -36,7 +39,7 @@ const formatDate = (d: Date | string) =>
     day: '2-digit',
   })
 
-useSeoMeta({ title: `#${tag} — ${config.site.name}` })
+useSeoMeta({ title: () => `#${tag.value} — ${config.site.name}` })
 </script>
 
 <style scoped>

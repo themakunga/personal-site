@@ -1,0 +1,29 @@
+{
+	admin off
+}
+
+:80 {
+	handle /api/auth/* {
+		reverse_proxy api:3000
+	}
+
+	handle /api/captcha/challenge {
+		reverse_proxy api:3000
+	}
+
+	@comments {
+		path /api/comments/*
+		method GET POST
+	}
+	handle @comments {
+		reverse_proxy api:3000
+	}
+
+	handle /api/* {
+		respond 404
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

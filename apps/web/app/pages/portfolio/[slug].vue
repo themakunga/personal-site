@@ -11,7 +11,7 @@
       <span v-for="tech in project.stack" :key="tech" class="stack-item">{{ tech }}</span>
     </div>
 
-    <div v-if="(subPages?.length ?? 0) > 1" class="project__nav">
+    <div v-if="subPages?.length" class="project__nav">
       <NuxtLink
         v-for="page in subPages"
         :key="page.path"
@@ -39,7 +39,7 @@ const route = useRoute()
 const slug = route.params.slug as string
 
 const { data: project } = await useAsyncData(`portfolio-${slug}`, () =>
-  queryCollection('portfolio').path(`/portfolio/${slug}/index`).first(),
+  queryCollection('portfolio').path(`/portfolio/${slug}`).first(),
 )
 
 if (!project.value) {

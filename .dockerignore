@@ -1,0 +1,10 @@
+.git
+.env*
+**/node_modules
+**/.nuxt
+**/.output
+**/.data
+generated
+apps/web/app/app.config.ts
+apps/web/content
+apps/web/public/assets

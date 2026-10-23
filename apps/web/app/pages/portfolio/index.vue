@@ -24,11 +24,10 @@ const config = useAppConfig()
 
 // Only index files (README → index) are the project roots
 const { data: projects } = await useAsyncData('portfolio', () =>
-  queryCollection('portfolio').where('path', 'LIKE', '%/index').order('order', 'ASC').all(),
+  queryCollection('portfolio').where('stem', 'LIKE', '%/index').order('order', 'ASC').all(),
 )
 
-// /portfolio/project-name/index → project-name
-const projectSlug = (path: string) => path.split('/').at(-2) ?? ''
+const projectSlug = (path: string) => path.split('/').at(-1) ?? ''
 
 useSeoMeta({ title: `Portfolio — ${config.site.name}` })
 </script>

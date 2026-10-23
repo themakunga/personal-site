@@ -9,13 +9,7 @@
       </a>
     </div>
 
-    <ul class="about__social">
-      <li v-for="link in config.social" :key="link.id">
-        <a :href="link.url" target="_blank" rel="noopener noreferrer">
-          {{ link.label }}
-        </a>
-      </li>
-    </ul>
+    <SocialLinks />
   </div>
 </template>
 
@@ -47,24 +41,5 @@ useSeoMeta({
 .about__email {
   color: var(--blue);
   font-size: 0.9rem;
-}
-
-.about__social {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.about__social a {
-  color: var(--comment);
-  font-size: 0.85rem;
-  text-decoration: none;
-}
-
-.about__social a:hover {
-  color: var(--cyan);
 }
 </style>
