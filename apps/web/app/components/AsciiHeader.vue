@@ -7,14 +7,9 @@
 </template>
 
 <script setup lang="ts">
-const config = useAppConfig()
+import art from '~/assets/ascii.txt?raw'
 
-// ponytail: static string, no reactive needed
-const art = `   _   ___           __              _    ___ ____                   __
-  / | / (_)________ / /___ ________  | |  / (_) / /___ __________  ___  /
- /  |/ / / ___/ __ \\/ / __ \`/ ___/  | | / / / / / __ \`/ ___/ __ \\/ _ \\/
-/ /|  / / /__/ /_/ / / /_/ (__  )   | |/ / / / / /_/ / /  / /_/ /  __/
-/_/ |_/_/\\___/\\____/_/\\__,_/____/   |___/_/_/_/\\__,_/_/   \\____/\\___/`
+const config = useAppConfig()
 </script>
 
 <style scoped>
