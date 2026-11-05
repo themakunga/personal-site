@@ -1,5 +1,8 @@
 .PHONY: help up down logs audio audio-force audio-test
 
+# Host port for the local proxy (default 8081); override with: make up PROXY_PORT=<port>
+export PROXY_PORT ?= 8081
+
 COMPOSE := docker compose -f docker-compose.local.yml
 
 help: ## Show available commands
@@ -7,6 +10,7 @@ help: ## Show available commands
 
 up: ## Build and start the local stack
 	$(COMPOSE) up --build -d
+	@echo "Site: http://localhost:$(PROXY_PORT)"
 	$(MAKE) logs
 
 down: ## Stop the local stack

@@ -44,7 +44,7 @@ services:
     volumes:
       - ./docker/Caddyfile.local:/etc/caddy/Caddyfile:ro
     ports:
-      - '127.0.0.1:8080:80'
+      - '127.0.0.1:${PROXY_PORT:-8081}:80'
     depends_on:
       - web
       - api
@@ -55,8 +55,8 @@ services:
       dockerfile: docker/api.Dockerfile
     environment:
       DATA_DIR: /data
-      PUBLIC_URL: http://localhost:8080
-      TRUSTED_ORIGINS: http://localhost:8080
+      PUBLIC_URL: http://localhost:${PROXY_PORT:-8081}
+      TRUSTED_ORIGINS: http://localhost:${PROXY_PORT:-8081}
       ALTCHA_HMAC_KEY: local-development-only
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}

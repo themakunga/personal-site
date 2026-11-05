@@ -6,7 +6,7 @@ Keep the `personal-content` repository next to this one (`../personal-content`).
 make up
 ```
 
-The site is available at http://localhost:8080. Changes to the web app reload automatically, and changes in `../personal-content` are imported within a few seconds. Rebuild with `make up` after changing dependencies. Use `make logs` to inspect containers and `make down` to stop them. The local SQLite database stays in a Docker volume until removed explicitly.
+The site is available at http://localhost:8081. Changes to the web app reload automatically, and changes in `../personal-content` are imported within a few seconds. Rebuild with `make up` after changing dependencies. Use `make logs` to inspect containers and `make down` to stop them. The local SQLite database stays in a Docker volume until removed explicitly.
 
 ## Article audio
 
