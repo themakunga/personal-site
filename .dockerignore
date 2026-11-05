@@ -3,6 +3,7 @@
 **/node_modules
 **/.nuxt
 **/.output
+!apps/web/.output/public
 **/.data
 generated
 apps/web/app/app.config.ts
