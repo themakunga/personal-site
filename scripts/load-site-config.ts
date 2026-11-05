@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse } from 'yaml'
@@ -19,6 +19,7 @@ writeFileSync(
 )
 
 // Write generated JSON for scripts/CI reference
+mkdirSync(resolve(root, 'generated'), { recursive: true })
 writeFileSync(resolve(root, 'generated/site-config.json'), JSON.stringify(config, null, 2) + '\n')
 
 console.log('✓ site config written to apps/web/app.config.ts and generated/site-config.json')
