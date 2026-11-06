@@ -11,7 +11,11 @@ services:
       - web
 
   web:
-    image: ghcr.io/themakunga/personal-site:latest
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      additional_contexts:
+        content: ../personal-content
     networks:
       - edge
       - backend
@@ -20,7 +24,9 @@ services:
       - api
 
   api:
-    image: ghcr.io/themakunga/personal-site-api:latest
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
     networks:
       - backend
     volumes:

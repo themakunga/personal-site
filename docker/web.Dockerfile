@@ -1,9 +1,19 @@
-# Static site served by Caddy
-# Build: docker build -f docker/web.Dockerfile -t ghcr.io/themakunga/personal-site .
-# Requires: apps/web/.output/public to exist (run pnpm generate first)
+# Static site served by Caddy, built entirely inside Docker (no registry, no host Node needed).
+# Needs the named build context "content" (the personal-content repo), see docker-compose.yml.
+FROM node:24-alpine AS build
+RUN apk add --no-cache python3 make g++
+RUN npm install -g pnpm@12.5.1
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY apps/api/package.json apps/api/package.json
+RUN pnpm install --frozen-lockfile
+COPY . .
+COPY --from=content . /content
+ENV CONTENT_DIR=/content
+RUN pnpm config:generate && pnpm content:import && pnpm generate
+
 FROM caddy:2-alpine
-
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY apps/web/.output/public /srv
-
+COPY --from=build /app/apps/web/.output/public /srv
 EXPOSE 80
