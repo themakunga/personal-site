@@ -16,6 +16,7 @@ detach: ## Build and start the local stack without following logs
 	@echo "Site: http://localhost:$(PROXY_PORT)"
 
 prod: ## Build images on this host and start production (incl. Cloudflare tunnel)
+	rm -rf .content && mkdir .content && cp -a ../personal-content/. .content/ && rm -rf .content/.git
 	docker compose -p personal-site-prod -f docker-compose.yml up --build -d
 
 prod-down: ## Stop production
