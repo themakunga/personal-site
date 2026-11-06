@@ -1,4 +1,4 @@
-.PHONY: help up detach prod prod-down down logs audio audio-force audio-test
+.PHONY: help up detach deploy prod prod-down down logs audio audio-force audio-test
 
 # Host port for the local proxy (default 8081); override with: make up PROXY_PORT=<port>
 export PROXY_PORT ?= 8081
@@ -14,6 +14,11 @@ up: detach ## Build and start the local stack, then follow logs
 detach: ## Build and start the local stack without following logs
 	$(COMPOSE) up --build -d
 	@echo "Site: http://localhost:$(PROXY_PORT)"
+
+deploy: ## Pull site + content (fast-forward only), rebuild and restart production
+	git pull --ff-only
+	git -C ../personal-content pull --ff-only
+	$(MAKE) prod
 
 prod: ## Build images on this host and start production (incl. Cloudflare tunnel)
 	rm -rf .content && mkdir .content && cp -a ../personal-content/. .content/ && rm -rf .content/.git
