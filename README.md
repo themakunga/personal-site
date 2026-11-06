@@ -25,3 +25,47 @@ make audio-test   # Test Markdown/frontmatter processing
 ```
 
 OAuth sign-in requires provider credentials in a local `.env` file (see `.env.example`); the stack starts without them.
+
+## Comments
+
+Posts opt in through frontmatter (documented in `personal-content`):
+
+```yaml
+comments:
+  show: true # render existing comments
+  enable: true # allow login and new comments
+```
+
+New comments are stored as `pending` and are hidden until approved. The admin API listens on
+`127.0.0.1:3001` only, so reach it through an SSH tunnel:
+
+```bash
+ssh -L 3001:127.0.0.1:3001 nicolas@192.168.5.153
+curl localhost:3001/comments                                   # list pending
+curl -X PATCH localhost:3001/comments/<id> \
+  -H 'content-type: application/json' -d '{"status":"visible"}' # approve
+```
+
+### Required environment (`.env` on the host)
+
+| Variable                                   | Where to get it                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| `PUBLIC_URL`, `TRUSTED_ORIGINS`            | Your public origin, e.g. `https://nicolasvillarroel.cl` (no trailing `/`) |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth App (below)                                                  |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client (below)                                         |
+| `ALTCHA_HMAC_KEY`                          | Any random secret: `openssl rand -hex 32`                                 |
+| `CLOUDFLARE_TUNNEL_TOKEN`                  | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure      |
+
+**GitHub** — https://github.com/settings/developers → _New OAuth App_.
+Homepage URL: `https://nicolasvillarroel.cl`.
+Authorization callback URL: `https://nicolasvillarroel.cl/api/auth/callback/github`.
+Then _Generate a new client secret_ and copy both values.
+
+**Google** — https://console.cloud.google.com/apis/credentials → _Create credentials_ → _OAuth client ID_
+→ type _Web application_. If asked, first configure the OAuth consent screen (_External_, app name,
+your email; the `openid email profile` scopes are enough).
+Authorized JavaScript origin: `https://nicolasvillarroel.cl`.
+Authorized redirect URI: `https://nicolasvillarroel.cl/api/auth/callback/google`.
+
+One provider is enough: with empty credentials for the other, its login button just fails. After
+editing `.env`, run `make prod` on the host (the API reads the variables at start).

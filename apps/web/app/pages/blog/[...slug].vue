@@ -17,6 +17,13 @@
     <div class="post__body prose">
       <ContentRenderer :value="post" />
     </div>
+
+    <PostComments
+      v-if="post.comments?.show || post.comments?.enable"
+      :slug="slugParts.join('/')"
+      :show="post.comments.show"
+      :enable="post.comments.enable"
+    />
   </article>
 
   <div v-else class="not-found">
