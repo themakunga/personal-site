@@ -21,8 +21,8 @@
     <PostComments
       v-if="post.comments?.show || post.comments?.enable"
       :slug="slugParts.join('/')"
-      :show="post.comments.show"
-      :enable="post.comments.enable"
+      :show="!!post.comments?.show"
+      :enable="!!post.comments?.enable"
     />
   </article>
 
