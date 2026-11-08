@@ -43,7 +43,6 @@ const slugParts = computed(() => {
 })
 
 const contentPath = computed(() => `/post/${slugParts.value.join('/')}`)
-const audioSrc = computed(() => `/audio/${slugParts.value.join('/')}.mp3`)
 
 const { data: post } = await useAsyncData(`post-${contentPath.value}`, () =>
   queryCollection('post').path(contentPath.value).first(),
@@ -52,6 +51,11 @@ const { data: post } = await useAsyncData(`post-${contentPath.value}`, () =>
 if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found' })
 }
+
+const audioSrc = computed(
+  () =>
+    `/audio/${slugParts.value.join('/')}.mp3?v=${encodeURIComponent(post.value?.updated_at ?? '')}`,
+)
 
 const formatDate = (d: Date | string) =>
   new Date(d).toLocaleDateString(config.site.language, {

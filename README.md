@@ -72,6 +72,12 @@ python3 -m unittest discover -s scripts -p test_production_audio.py # Test produ
 `make prod` (also called by `make deploy`) generates changed article audio before building the
 production web image, so MP3 files are included in the served site. A synthesis failure stops
 the deployment. The first run downloads voice models; later runs reuse cached models and audio.
+The player versions MP3 URLs with the article's update timestamp to avoid stale CDN responses.
+Verify a deployed player's audio using its generated article HTML:
+
+```sh
+python3 scripts/check_article_audio.py https://nicolasvillarroel.cl/blog/2026/las-aventuras-de-nico-pt1/index.html
+```
 
 OAuth sign-in requires provider credentials in a local `.env` file (see `.env.example`); the stack starts without them.
 
