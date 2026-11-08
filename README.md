@@ -44,7 +44,7 @@ can keep Obsidian image embeds, including spaces and optional dimensions:
 The importer converts them to web image URLs in the generated copies without modifying the
 source notes. Bare filenames must identify a unique image under `assets/`; use an explicit
 `assets/subfolder/image.png` path for duplicate filenames. Missing or ambiguous images stop
-the import with an error. Code examples, note embeds and existing Markdown images are preserved.
+the import with an error. Code examples and note embeds are preserved.
 
 Standard Markdown with a root-relative `/assets/` URL also works. Encode spaces as `%20`:
 
@@ -62,7 +62,29 @@ pnpm content:prepare
 
 Local imports refresh automatically while the Docker stack is running; production requires a
 rebuild with `make prod`.
-Run importer checks with `node --import tsx --test scripts/prepare-markdown.test.ts`.
+Run preparation checks with `node --import tsx --test scripts/*.test.ts`.
+
+## Image optimization and build caches
+
+Content preparation converts PNG and JPEG assets to WebP at quality 80, limits both dimensions
+to 1600 pixels without enlarging smaller images, applies EXIF orientation and removes metadata.
+Original files in `personal-content` remain unchanged. Hero/frontmatter images, Obsidian embeds,
+standard `/assets/` URLs and generated site configuration point to the optimized files.
+GIF, SVG and existing WebP files are copied unchanged.
+
+ImageMagick 7 with WebP support is required for preparation and script tests; both web Docker
+images declare it. Conversion results live in `.cache/images`, keyed by source bytes, encoder
+version and compression settings. Unchanged images are reused; changed images get new hashed
+URLs, which also prevent stale browser/CDN responses. Local Docker keeps this cache in the
+`web_image_cache` volume.
+
+Production Docker/Podman builds keep persistent cache mounts for pnpm's package store and image
+conversion. Dependency layers precede source copies, and generated
+output, local caches and Obsidian metadata are excluded from the build context. Normal `make prod`
+and `make deploy` commands reuse these caches automatically on the same builder; no special flag
+is needed. A completely unchanged build can reuse its final build layer. Content or code changes
+still run Nuxt generation, while cached dependencies and images reduce repeated work.
+The first build and builds after pruning builder caches are cold.
 
 ## Article audio
 

@@ -3,8 +3,13 @@
 **/node_modules
 **/.nuxt
 **/.output
-!apps/web/.output/public
 **/.data
+**/.cache
+.pnpm-store
+.ruff_cache
+.content/.obsidian
+.content/.git
+**/__pycache__
 generated
 apps/web/app/app.config.ts
 apps/web/content

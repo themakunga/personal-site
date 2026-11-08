@@ -37,6 +37,7 @@ services:
       - ./apps/web/nuxt.config.ts:/app/apps/web/nuxt.config.ts:ro
       - ./scripts:/app/scripts:ro
       - ../personal-content:/content:ro
+      - web_image_cache:/app/.cache/images
 
   proxy:
     image: caddy:2-alpine
@@ -68,3 +69,4 @@ volumes:
   local_sqlite_data:
   tts_audio_cache:
   tts_voice_models:
+  web_image_cache:

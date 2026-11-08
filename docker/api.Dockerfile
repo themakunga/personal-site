@@ -9,7 +9,8 @@ WORKDIR /app
 # tsx is needed to run the TypeScript entry point
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
-RUN pnpm install --frozen-lockfile --filter api
+RUN --mount=type=cache,id=personal-site-pnpm,target=/pnpm/store,sharing=locked \
+    pnpm install --frozen-lockfile --filter api --store-dir /pnpm/store
 
 # Copy source (tsx runs TS directly)
 COPY apps/api ./apps/api

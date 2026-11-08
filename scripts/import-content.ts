@@ -10,6 +10,7 @@ import {
 import { resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { prepareMarkdown } from './prepare-markdown.js'
+import { optimizeImages, rewriteAssetUrls } from './optimize-images.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -43,6 +44,7 @@ console.log('✓ portfolio imported')
 // 3. Assets: personal-content/assets/ → apps/web/public/assets/
 cp(resolve(contentDir, 'assets'), resolve(webDir, 'public/assets'))
 console.log('✓ assets imported')
+const imageUrls = optimizeImages(resolve(webDir, 'public/assets'), resolve(root, '.cache/images'))
 
 // Normalize only the generated copies; keep the Obsidian vault unchanged.
 const assetsDir = resolve(contentDir, 'assets')
@@ -59,10 +61,17 @@ for (const directory of [resolve(webDir, 'content/post'), portfolioDst]) {
     if (!entry.isFile() || !entry.name.endsWith('.md')) continue
     const path = resolve(entry.parentPath, entry.name)
     try {
-      writeFileSync(path, prepareMarkdown(readFileSync(path, 'utf8'), assets))
+      writeFileSync(path, prepareMarkdown(readFileSync(path, 'utf8'), assets, imageUrls))
     } catch (error) {
       throw new Error(`Failed to import ${path}`, { cause: error })
     }
   }
 }
 console.log('✓ Obsidian images and dates normalized')
+
+for (const path of [
+  resolve(webDir, 'app/app.config.ts'),
+  resolve(root, 'generated/site-config.json'),
+]) {
+  if (existsSync(path)) writeFileSync(path, rewriteAssetUrls(readFileSync(path, 'utf8'), imageUrls))
+}

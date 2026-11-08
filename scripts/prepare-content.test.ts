@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import {
   cpSync,
   mkdirSync,
@@ -33,13 +33,19 @@ test('prepares content before rendering and stops on a broken image', (t) => {
     resolve(source, 'site.yaml'),
     JSON.stringify({
       site: { name: 'Example', title: 'Example site', url: 'https://example.com' },
-      profile: { displayName: 'Example', email: 'example@example.com' },
+      profile: {
+        displayName: 'Example',
+        email: 'example@example.com',
+        avatar: { url: '/assets/photo.png', alt: 'Example' },
+      },
     }),
   )
-  const note = '---\ntitle: Example\ncreated_at: 2026-11-08\n---\n![[photo.png|640]]\n'
+  const note =
+    '---\ntitle: Example\nimage: /assets/photo.png\ncreated_at: 2026-11-08\n---\n![[photo.png|640]]\n![Photo](/assets/photo.png)\n'
   writeFileSync(resolve(source, 'posts/example.md'), note)
   writeFileSync(resolve(source, 'portfolio/example/README.md'), note)
-  writeFileSync(resolve(source, 'assets/photo.png'), 'image fixture')
+  execFileSync('magick', ['-size', '8x4', 'xc:blue', resolve(source, 'assets/photo.png')])
+  const original = readFileSync(resolve(source, 'assets/photo.png'))
 
   const run = () =>
     spawnSync(process.execPath, ['--import', 'tsx', 'scripts/prepare-content.ts'], {
@@ -61,15 +67,28 @@ test('prepares content before rendering and stops on a broken image', (t) => {
     const content = readFileSync(resolve(directory, 'apps/web/content', path), 'utf8')
     assert.match(content, /date: 2026-11-08T00:00:00.000Z/)
     assert.match(content, /updated_at: 2026-11-08T00:00:00.000Z/)
-    assert.match(content, /!\[photo.png\]\(<\/assets\/photo.png>\)\{width="640"\}/)
+    assert.match(
+      content,
+      /!\[photo.png\]\(<\/assets\/_optimized\/[a-f0-9]+\.webp>\)\{width="640"\}/,
+    )
+    assert.match(content, /!\[Photo\]\(\/assets\/_optimized\/[a-f0-9]+\.webp\)/)
+    assert.match(content, /image: \/assets\/_optimized\/[a-f0-9]+\.webp/)
   }
+  const config = JSON.parse(readFileSync(resolve(directory, 'generated/site-config.json'), 'utf8'))
+  assert.match(config.profile.avatar.url, /^\/assets\/_optimized\/[a-f0-9]+\.webp$/)
   assert.equal(
-    readFileSync(resolve(directory, 'apps/web/public/assets/photo.png'), 'utf8'),
-    'image fixture',
+    readFileSync(resolve(directory, 'apps/web/public', config.profile.avatar.url.slice(1)), {
+      encoding: 'hex',
+    }).slice(0, 8),
+    '52494646',
   )
+  assert.deepEqual(readFileSync(resolve(source, 'assets/photo.png')), original)
   assert.equal(readFileSync(resolve(source, 'posts/example.md'), 'utf8'), note)
+  const cached = run()
+  assert.equal(cached.status, 0, cached.stderr)
+  assert.match(cached.stdout, /images: 0 converted, 1 cached/)
 
-  writeFileSync(resolve(source, 'posts/example.md'), note.replace('photo.png', 'missing.png'))
+  writeFileSync(resolve(source, 'posts/example.md'), note.replaceAll('photo.png', 'missing.png'))
   const failure = run()
   assert.notEqual(failure.status, 0)
   assert.match(failure.stderr, /Image embed must match exactly one file/)

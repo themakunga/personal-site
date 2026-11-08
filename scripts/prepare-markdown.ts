@@ -1,12 +1,22 @@
 import { basename } from 'node:path'
 import { parseDocument } from 'yaml'
+import { assetUrlPattern, rewriteAssetUrls } from './optimize-images.js'
 
-export function prepareMarkdown(markdown: string, assets: string[]): string {
+export function prepareMarkdown(
+  markdown: string,
+  assets: string[],
+  imageUrls = new Map<string, string>(),
+): string {
   const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
   let header = frontmatter?.[0] ?? ''
   if (frontmatter) {
     const document = parseDocument(frontmatter[1]!)
     if (document.errors.length) throw document.errors[0]
+    const image = document.get('image')
+    if (typeof image === 'string' && rewriteAssetUrls(image, imageUrls) !== image) {
+      document.set('image', rewriteAssetUrls(image, imageUrls))
+      header = `---\n${document.toString()}---\n`
+    }
     if (!document.has('date') && document.has('created_at')) {
       const createdAt = document.get('created_at')
       if (typeof createdAt !== 'string' || !Number.isFinite(Date.parse(createdAt))) {
@@ -38,7 +48,10 @@ export function prepareMarkdown(markdown: string, assets: string[]): string {
     if (matches.length !== 1) {
       throw new Error(`Image embed must match exactly one file in assets/: ${target}`)
     }
-    const url = `/assets/${matches[0]!.split('/').map(encodeURIComponent).join('/')}`
+    const url = rewriteAssetUrls(
+      `/assets/${matches[0]!.split('/').map(encodeURIComponent).join('/')}`,
+      imageUrls,
+    )
     const dimensions = option.match(/^(\d+)(?:x(\d+))?$/)
     const alt = (dimensions ? basename(target) : option || basename(target)).replace(
       /[\\[\]]/g,
@@ -52,6 +65,11 @@ export function prepareMarkdown(markdown: string, assets: string[]): string {
 
   // shortcut: handles standard fences and single-line code spans; use an AST parser for nested Markdown.
   let fence = ''
+  const urlPattern = imageUrls.size ? `|(?:${assetUrlPattern(imageUrls)})(?=$|[\\s<>"')\\]?#])` : ''
+  const inlinePattern = new RegExp(
+    /(`+).*?\1|(?<!\\)!\[\[([^|\]\n]+)(?:\|([^\]\n]*))?\]\]/.source + urlPattern,
+    'g',
+  )
   const body = markdown.slice(frontmatter?.[0].length ?? 0)
   const converted = body.split('\n').map((line) => {
     if (fence) {
@@ -65,9 +83,13 @@ export function prepareMarkdown(markdown: string, assets: string[]): string {
     }
     if (/^( {4}|\t)/.test(line)) return line
     return line.replace(
-      /(`+).*?\1|(?<!\\)!\[\[([^|\]\n]+)(?:\|([^\]\n]*))?\]\]/g,
+      inlinePattern,
       (match, code: string | undefined, target: string, option: string | undefined) =>
-        code ? match : convertImage(match, target, option),
+        code
+          ? match
+          : target
+            ? convertImage(match, target, option)
+            : rewriteAssetUrls(match, imageUrls),
     )
   })
   return header + converted.join('\n')
