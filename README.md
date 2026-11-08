@@ -20,6 +20,18 @@ date: 2026-11-08
 updated_at: 2026-11-08T12:30:00-03:00
 ```
 
+The home page features the latest entry with its frontmatter `image` and title, followed by
+the next five entries without repeating the featured post. Save the hero file in
+`personal-content/assets/` and reference its public path in the post:
+
+```yaml
+image: /assets/my-photo.jpg
+```
+
+Use `%20` for spaces in the path. An absent or empty `image` keeps a text-only hero; an empty
+collection leaves the latest-entry list empty. The article template includes an empty `image`
+property ready to fill in.
+
 Store images in `personal-content/assets/` (subfolders are supported). Posts and portfolio pages
 can keep Obsidian image embeds, including spaces and optional dimensions:
 

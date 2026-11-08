@@ -8,6 +8,7 @@ export default defineContentConfig({
       schema: z.object({
         title: z.string(),
         description: z.string().optional(),
+        image: z.string().optional(),
         date: z.coerce.date(),
         // Nuxt stores date fields without their time; normalized ISO text preserves update order.
         updated_at: z.string(),
