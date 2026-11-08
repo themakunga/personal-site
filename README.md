@@ -66,7 +66,12 @@ The supported values are `es-CL`, `es-MX`, and `en-US`. Piper does not currently
 make audio        # Generate changed articles
 make audio-force  # Regenerate all enabled articles
 make audio-test   # Test Markdown/frontmatter processing
+python3 -m unittest discover -s scripts -p test_production_audio.py # Test production audio ordering
 ```
+
+`make prod` (also called by `make deploy`) generates changed article audio before building the
+production web image, so MP3 files are included in the served site. A synthesis failure stops
+the deployment. The first run downloads voice models; later runs reuse cached models and audio.
 
 OAuth sign-in requires provider credentials in a local `.env` file (see `.env.example`); the stack starts without them.
 

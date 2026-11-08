@@ -21,6 +21,7 @@ deploy: ## Pull site + content (fast-forward only), rebuild and restart producti
 	$(MAKE) prod
 
 prod: ## Build images on this host and start production (incl. Cloudflare tunnel)
+	$(MAKE) audio
 	rm -rf .content && mkdir .content && cp -a ../personal-content/. .content/ && rm -rf .content/.git
 	docker compose -p personal-site-prod -f docker-compose.yml up --build -d
 
