@@ -28,8 +28,13 @@ setInterval(() => {
   try {
     const current = snapshot()
     if (current === previous) return
-    execFileSync('pnpm', ['config:generate'], { stdio: 'inherit' })
-    execFileSync('pnpm', ['content:import'], { stdio: 'inherit' })
+    execFileSync(
+      process.execPath,
+      ['--import', 'tsx', resolve(import.meta.dirname, 'prepare-content.ts')],
+      {
+        stdio: 'inherit',
+      },
+    )
     previous = current
   } catch (error) {
     console.error('Content sync failed; retrying on the next check:', error)

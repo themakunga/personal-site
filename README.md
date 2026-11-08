@@ -8,6 +8,48 @@ make up
 
 The site is available at http://localhost:8081. Changes to the web app reload automatically, and changes in `../personal-content` are imported within a few seconds. Rebuild with `make up` after changing dependencies. Use `make logs` to inspect containers and `make down` to stop them. The local SQLite database stays in a Docker volume until removed explicitly.
 
+## Post dates and images
+
+Home, blog, category and tag lists show posts from newest to oldest using the frontmatter
+`date`. The importer uses Obsidian's `created_at` when `date` is absent. Set `date` to override
+the publication date; filenames and Git timestamps do not control the order:
+
+```yaml
+date: 2026-11-08
+```
+
+Store images in `personal-content/assets/` (subfolders are supported). Posts and portfolio pages
+can keep Obsidian image embeds, including spaces and optional dimensions:
+
+```markdown
+![[Pasted image 20261108005033.png]]
+![[assets/photos/example.jpg|640]]
+![[example.jpg|640x480]]
+```
+
+The importer converts them to web image URLs in the generated copies without modifying the
+source notes. Bare filenames must identify a unique image under `assets/`; use an explicit
+`assets/subfolder/image.png` path for duplicate filenames. Missing or ambiguous images stop
+the import with an error. Code examples, note embeds and existing Markdown images are preserved.
+
+Standard Markdown with a root-relative `/assets/` URL also works. Encode spaces as `%20`:
+
+```markdown
+![Article illustration](/assets/Pasted%20image%2020261108005033.png)
+```
+
+`scripts/prepare-content.ts` generates the site configuration, imports the content and converts
+Obsidian images and dates before the web app's `dev`, `build` and `generate` commands start.
+Docker uses the same pipeline. To prepare content manually from the repository root:
+
+```sh
+pnpm content:prepare
+```
+
+Local imports refresh automatically while the Docker stack is running; production requires a
+rebuild with `make prod`.
+Run importer checks with `node --import tsx --test scripts/prepare-markdown.test.ts`.
+
 ## Article audio
 
 Add `audio` to a post frontmatter to generate an MP3 with Piper:

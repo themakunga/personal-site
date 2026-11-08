@@ -3,9 +3,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "nuxt build",
-    "dev": "nuxt dev",
-    "generate": "nuxt generate",
+    "build": "node --import tsx ../../scripts/prepare-content.ts && nuxt build",
+    "dev": "node --import tsx ../../scripts/prepare-content.ts && nuxt dev",
+    "generate": "node --import tsx ../../scripts/prepare-content.ts && nuxt generate",
     "lint": "eslint .",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",

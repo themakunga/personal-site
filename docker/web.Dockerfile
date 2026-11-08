@@ -11,7 +11,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 COPY .content /content
 ENV CONTENT_DIR=/content
-RUN pnpm config:generate && pnpm content:import && pnpm generate
+RUN pnpm generate
 
 FROM caddy:2-alpine
 COPY Caddyfile /etc/caddy/Caddyfile

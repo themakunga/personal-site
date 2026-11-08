@@ -1,6 +1,15 @@
-import { cpSync, rmSync, readdirSync, renameSync, existsSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import {
+  cpSync,
+  rmSync,
+  readdirSync,
+  renameSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
+import { resolve, dirname, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { prepareMarkdown } from './prepare-markdown.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '..')
@@ -34,3 +43,26 @@ console.log('✓ portfolio imported')
 // 3. Assets: personal-content/assets/ → apps/web/public/assets/
 cp(resolve(contentDir, 'assets'), resolve(webDir, 'public/assets'))
 console.log('✓ assets imported')
+
+// Normalize only the generated copies; keep the Obsidian vault unchanged.
+const assetsDir = resolve(contentDir, 'assets')
+const assets = existsSync(assetsDir)
+  ? readdirSync(assetsDir, { recursive: true, withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) =>
+        relative(assetsDir, resolve(entry.parentPath, entry.name)).replaceAll('\\', '/'),
+      )
+  : []
+for (const directory of [resolve(webDir, 'content/post'), portfolioDst]) {
+  if (!existsSync(directory)) continue
+  for (const entry of readdirSync(directory, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue
+    const path = resolve(entry.parentPath, entry.name)
+    try {
+      writeFileSync(path, prepareMarkdown(readFileSync(path, 'utf8'), assets))
+    } catch (error) {
+      throw new Error(`Failed to import ${path}`, { cause: error })
+    }
+  }
+}
+console.log('✓ Obsidian images and dates normalized')
