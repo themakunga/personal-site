@@ -9,6 +9,8 @@ export default defineContentConfig({
         title: z.string(),
         description: z.string().optional(),
         date: z.coerce.date(),
+        // Nuxt stores date fields without their time; normalized ISO text preserves update order.
+        updated_at: z.string(),
         category: z.string().optional(),
         tags: z.array(z.string()).default([]),
         draft: z.boolean().default(false),

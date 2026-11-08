@@ -27,7 +27,10 @@ const tag = computed(() => String(route.params.tag))
 const { data: posts } = await useAsyncData(
   () => `tag-${tag.value}`,
   async () => {
-    const all = await queryCollection('post').where('draft', '=', false).order('date', 'DESC').all()
+    const all = await queryCollection('post')
+      .where('draft', '=', false)
+      .order('updated_at', 'DESC')
+      .all()
     return all.filter((p) => p.tags?.includes(tag.value))
   },
 )

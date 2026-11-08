@@ -30,7 +30,7 @@ const { data: posts } = await useAsyncData(
     queryCollection('post')
       .where('draft', '=', false)
       .where('category', '=', category.value)
-      .order('date', 'DESC')
+      .order('updated_at', 'DESC')
       .all(),
 )
 

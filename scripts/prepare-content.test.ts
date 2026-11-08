@@ -60,6 +60,7 @@ test('prepares content before rendering and stops on a broken image', (t) => {
   for (const path of ['post/example.md', 'portfolio/example/index.md']) {
     const content = readFileSync(resolve(directory, 'apps/web/content', path), 'utf8')
     assert.match(content, /date: 2026-11-08T00:00:00.000Z/)
+    assert.match(content, /updated_at: 2026-11-08T00:00:00.000Z/)
     assert.match(content, /!\[photo.png\]\(<\/assets\/photo.png>\)\{width="640"\}/)
   }
   assert.equal(

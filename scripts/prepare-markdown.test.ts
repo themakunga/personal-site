@@ -33,6 +33,7 @@ test('leaves Markdown, note embeds, code, escapes and frontmatter intact', () =>
     '---',
     'title: "![[missing.png]]"',
     'date: 2026-10-01',
+    'updated_at: 2026-10-01T00:00:00.000Z',
     '---',
     '![Photo](/assets/photo.jpg)',
     '![[Another note]]',
@@ -69,15 +70,34 @@ test('rejects missing, ambiguous and escaping image paths', () => {
   )
 })
 
-test('uses created_at for sorting while preserving an explicit publication date', () => {
+test('uses created_at as the publication date while preserving an explicit date', () => {
   const source = '---\ntitle: Example\ncreated_at: 2026-11-08T01:25:53-0300\n---\nBody'
   const result = prepareMarkdown(source, assets)
   assert.equal(parse(result.split('---')[1]!).date, '2026-11-08T04:25:53.000Z')
   assert.ok(result.endsWith('\nBody'))
   const explicit = source.replace('title: Example', 'title: Example\ndate: 2026-10-01')
-  assert.equal(prepareMarkdown(explicit, assets), explicit)
+  assert.equal(parse(prepareMarkdown(explicit, assets).split('---')[1]!).date, '2026-10-01')
   assert.throws(
     () => prepareMarkdown(source.replace('2026-11-08T01:25:53-0300', 'invalid'), assets),
     /Invalid created_at/,
+  )
+})
+
+test('normalizes updated_at for sorting and falls back to the publication date', () => {
+  const source = '---\ndate: 2020-01-01\nupdated_at: 2026-11-08T01:30:00-0300\n---\nBody'
+  assert.equal(
+    parse(prepareMarkdown(source, assets).split('---')[1]!).updated_at,
+    '2026-11-08T04:30:00.000Z',
+  )
+  for (const field of ['date', 'created_at']) {
+    const note = `---\n${field}: 2026-10-23\n---\nBody`
+    assert.equal(
+      parse(prepareMarkdown(note, assets).split('---')[1]!).updated_at,
+      '2026-10-23T00:00:00.000Z',
+    )
+  }
+  assert.throws(
+    () => prepareMarkdown(source.replace('2026-11-08T01:30:00-0300', 'invalid'), assets),
+    /Invalid updated_at/,
   )
 })

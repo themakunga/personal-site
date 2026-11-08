@@ -22,7 +22,7 @@
 const config = useAppConfig()
 
 const { data: posts } = await useAsyncData('blog-posts', () =>
-  queryCollection('post').where('draft', '=', false).order('date', 'DESC').all(),
+  queryCollection('post').where('draft', '=', false).order('updated_at', 'DESC').all(),
 )
 
 const formatDate = (d: Date | string) =>

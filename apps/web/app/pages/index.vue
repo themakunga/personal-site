@@ -19,7 +19,7 @@
 const config = useAppConfig()
 
 const { data: recentPosts } = await useAsyncData('home-posts', () =>
-  queryCollection('post').where('draft', '=', false).order('date', 'DESC').limit(5).all(),
+  queryCollection('post').where('draft', '=', false).order('updated_at', 'DESC').limit(5).all(),
 )
 
 const formatDate = (d: Date | string) =>

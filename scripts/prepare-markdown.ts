@@ -15,6 +15,17 @@ export function prepareMarkdown(markdown: string, assets: string[]): string {
       document.set('date', new Date(createdAt).toISOString())
       header = `---\n${document.toString()}---\n`
     }
+    const updatedAt = document.get('updated_at') ?? document.get('date')
+    if (updatedAt !== undefined) {
+      if (typeof updatedAt !== 'string' || !Number.isFinite(Date.parse(updatedAt))) {
+        throw new Error('Invalid updated_at: expected an update date')
+      }
+      const normalized = new Date(updatedAt).toISOString()
+      if (document.get('updated_at') !== normalized) {
+        document.set('updated_at', normalized)
+        header = `---\n${document.toString()}---\n`
+      }
+    }
   }
 
   const convertImage = (embed: string, target: string, option = '') => {

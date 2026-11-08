@@ -10,12 +10,14 @@ The site is available at http://localhost:8081. Changes to the web app reload au
 
 ## Post dates and images
 
-Home, blog, category and tag lists show posts from newest to oldest using the frontmatter
-`date`. The importer uses Obsidian's `created_at` when `date` is absent. Set `date` to override
-the publication date; filenames and Git timestamps do not control the order:
+Home, blog, category and tag lists show posts from most recently updated to least recently
+updated using the frontmatter `updated_at`. The importer normalizes timestamps to UTC for
+chronological sorting. If `updated_at` is absent, it uses `date`, which falls back to Obsidian's
+`created_at`. The displayed publication date still comes from `date`:
 
 ```yaml
 date: 2026-11-08
+updated_at: 2026-11-08T12:30:00-03:00
 ```
 
 Store images in `personal-content/assets/` (subfolders are supported). Posts and portfolio pages
