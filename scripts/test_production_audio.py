@@ -29,9 +29,9 @@ class ProductionAudioTest(unittest.TestCase):
                 '  "compose -f docker-compose.local.yml run --rm tts --once")\n'
                 '    test "${FAIL_TTS:-0}" = 0 || exit 23\n'
                 "    mkdir -p apps/web/public/audio\n"
-                "    printf ID3fixture > apps/web/public/audio/article.mp3 ;;\n"
+                "    printf OggSfixture > apps/web/public/audio/article.ogg ;;\n"
                 '  "compose -p personal-site-prod -f docker-compose.yml up --build -d")\n'
-                "    test -s apps/web/public/audio/article.mp3\n"
+                "    test -s apps/web/public/audio/article.ogg\n"
                 "    test -f .content/posts/article.md\n"
                 "    touch web-built ;;\n"
                 "  *) exit 24 ;;\n"

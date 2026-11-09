@@ -14,3 +14,4 @@ generated
 apps/web/app/app.config.ts
 apps/web/content
 apps/web/public/assets
+apps/web/public/audio/**/*.mp3

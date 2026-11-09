@@ -9,7 +9,7 @@
         </NuxtLink>
       </div>
       <audio v-if="post.audio" class="post__audio" controls preload="metadata">
-        <source :src="audioSrc" type="audio/mpeg" />
+        <source :src="audioSrc" type="audio/ogg; codecs=opus" />
         Tu navegador no puede reproducir este audio.
       </audio>
     </header>
@@ -54,7 +54,7 @@ if (!post.value) {
 
 const audioSrc = computed(
   () =>
-    `/audio/${slugParts.value.join('/')}.mp3?v=${encodeURIComponent(post.value?.updated_at ?? '')}`,
+    `/audio/${slugParts.value.join('/')}.ogg?v=${encodeURIComponent(post.value?.updated_at ?? '')}`,
 )
 
 const formatDate = (d: Date | string) =>

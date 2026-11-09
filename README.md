@@ -88,7 +88,7 @@ The first build and builds after pruning builder caches are cold.
 
 ## Article audio
 
-Add `audio` to a post frontmatter to generate an MP3 with Piper:
+Add `audio` to a post frontmatter to generate Ogg Opus narration with Piper:
 
 ```yaml
 audio: es-CL # Chilean Spanish
@@ -99,14 +99,18 @@ The supported values are `es-CL`, `es-MX`, and `en-US`. Piper does not currently
 ```sh
 make audio        # Generate changed articles
 make audio-force  # Regenerate all enabled articles
-make audio-test   # Test Markdown/frontmatter processing
+make audio-test   # Test audio generation, caching and delivery checks
 python3 -m unittest discover -s scripts -p test_production_audio.py # Test production audio ordering
 ```
 
 `make prod` (also called by `make deploy`) generates changed article audio before building the
-production web image, so MP3 files are included in the served site. A synthesis failure stops
+production web image, so `.ogg` files are included in the served site. A synthesis failure stops
 the deployment. The first run downloads voice models; later runs reuse cached models and audio.
-The player versions MP3 URLs with the article's update timestamp to avoid stale CDN responses.
+Audio is encoded as mono Opus at a 32 kb/s VBR target, tuned for speech. The output extension
+is `.ogg`, and the player declares `audio/ogg; codecs=opus`. Cache hashes include encoder settings;
+the first run after this format change regenerates enabled articles, then unchanged audio is reused.
+Legacy MP3 files are excluded from the production build context. The player versions Ogg URLs
+with the article's update timestamp to avoid stale CDN responses.
 Verify a deployed player's audio using its generated article HTML:
 
 ```sh

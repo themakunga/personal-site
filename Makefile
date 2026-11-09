@@ -42,6 +42,6 @@ audio-force: ## Regenerate audio for every enabled article
 	$(COMPOSE) build tts
 	$(COMPOSE) run --rm tts --force
 
-audio-test: ## Run audio generator tests in Docker
+audio-test: ## Run audio generator and delivery tests in Docker
 	$(COMPOSE) build tts
-	$(COMPOSE) run --rm --entrypoint python3 tts -m unittest scripts/test_generate_audio.py
+	$(COMPOSE) run --rm --entrypoint python3 tts -m unittest scripts/test_generate_audio.py scripts/test_check_article_audio.py

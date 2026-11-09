@@ -19,6 +19,7 @@ VOICES = {
     "es-MX": "es_MX-ald-medium",
     "en-US": "en_US-lessac-medium",
 }
+OPUS_ENCODER = ("opusenc", "--quiet", "--bitrate", "32", "--speech", "--downmix-mono")
 
 
 def read_article(path: Path) -> tuple[str | None, str]:
@@ -34,7 +35,9 @@ def read_article(path: Path) -> tuple[str | None, str]:
     language = metadata.get("audio")
     if language is not None and language not in VOICES:
         supported = ", ".join(VOICES)
-        raise ValueError(f"Unsupported audio language {language!r} in {path}; use {supported}")
+        raise ValueError(
+            f"Unsupported audio language {language!r} in {path}; use {supported}"
+        )
     return language, parts[2]
 
 
@@ -66,7 +69,14 @@ def ensure_voice(voice: str, voices_dir: Path) -> Path:
 
     print(f"Downloading Piper voice {voice}...")
     subprocess.run(
-        [sys.executable, "-m", "piper.download_voices", "--data-dir", str(voices_dir), voice],
+        [
+            sys.executable,
+            "-m",
+            "piper.download_voices",
+            "--data-dir",
+            str(voices_dir),
+            voice,
+        ],
         check=True,
     )
     return model
@@ -80,7 +90,7 @@ def synthesize(text: str, voice: str, voices_dir: Path, destination: Path) -> No
         temporary = Path(temporary_dir)
         source_text = temporary / "article.txt"
         wav = temporary / "article.wav"
-        mp3 = temporary / "article.mp3"
+        ogg = temporary / "article.ogg"
         source_text.write_text(text, encoding="utf-8")
         subprocess.run(
             [
@@ -97,15 +107,17 @@ def synthesize(text: str, voice: str, voices_dir: Path, destination: Path) -> No
             check=True,
         )
         subprocess.run(
-            ["lame", "--silent", "-b", "96", str(wav), str(mp3)],
+            [*OPUS_ENCODER, str(wav), str(ogg)],
             check=True,
         )
-        staged = destination.with_suffix(".mp3.tmp")
-        shutil.copyfile(mp3, staged)
+        staged = destination.with_suffix(".ogg.tmp")
+        shutil.copyfile(ogg, staged)
         staged.replace(destination)
 
 
-def generate(content_dir: Path, output_dir: Path, cache_dir: Path, voices_dir: Path, force: bool) -> None:
+def generate(
+    content_dir: Path, output_dir: Path, cache_dir: Path, voices_dir: Path, force: bool
+) -> None:
     cache_path = cache_dir / "audio.json"
     cache = load_cache(cache_path)
     changed = False
@@ -119,10 +131,12 @@ def generate(content_dir: Path, output_dir: Path, cache_dir: Path, voices_dir: P
         if not text:
             raise ValueError(f"Article has no narratable text: {article}")
 
-        relative = article.relative_to(content_dir).with_suffix(".mp3")
+        relative = article.relative_to(content_dir).with_suffix(".ogg")
         destination = output_dir / relative
         voice = VOICES[language]
-        digest = hashlib.sha256(f"{voice}\0{text}".encode()).hexdigest()
+        digest = hashlib.sha256(
+            f"{voice}\0{json.dumps(OPUS_ENCODER)}\0{text}".encode()
+        ).hexdigest()
         key = relative.as_posix()
         if not force and destination.exists() and cache.get(key) == digest:
             print(f"Unchanged: {key}")
@@ -135,7 +149,9 @@ def generate(content_dir: Path, output_dir: Path, cache_dir: Path, voices_dir: P
 
     if changed:
         cache_dir.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        cache_path.write_text(
+            json.dumps(cache, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
 
 
 def snapshot(content_dir: Path) -> tuple[tuple[str, int, int], ...]:
@@ -175,7 +191,10 @@ def main() -> None:
             generate(content_dir, output_dir, cache_dir, voices_dir, False)
             previous = current
         except Exception as error:
-            print(f"Audio generation failed; retrying after the next change: {error}", file=sys.stderr)
+            print(
+                f"Audio generation failed; retrying after the next change: {error}",
+                file=sys.stderr,
+            )
             previous = current
 
 
