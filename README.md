@@ -143,9 +143,8 @@ OAuth sign-in requires provider credentials in a local `.env` file (see `.env.ex
 Posts opt in through frontmatter (documented in `personal-content`):
 
 ```yaml
-comments:
-  show: true # render existing comments
-  enable: true # allow login and new comments
+show_comments: true # render existing comments
+enable_comments: true # allow login and new comments
 ```
 
 New comments are stored as `pending` and are hidden until approved. The admin API listens on
@@ -181,3 +180,16 @@ Authorized redirect URI: `https://nicolasvillarroel.cl/api/auth/callback/google`
 
 One provider is enough: with empty credentials for the other, its login button just fails. After
 editing `.env`, run `make prod` on the host (the API reads the variables at start).
+
+## Homepage
+
+Set `featured: true` in post frontmatter to select the latest published featured post for the
+hero. Below it, six image tiles show the latest published posts with a nonempty `image`.
+The final list uses `blog.postPerPage` (default: five) and static `/page/2`, `/page/3` routes.
+All sections sort by `updated_at` descending, then path descending, and exclude drafts.
+The sections are independent; posts can appear in more than one section.
+
+Run `python3 scripts/test_homepage.py` after installing the existing dependencies to generate a
+fixture site and check selection, prerendered pagination and all four flat comment flag combinations.
+It restores the imported source content afterwards; run the normal generate command to restore the
+production build output. `CONTENT_DIR` can select the source content repository.

@@ -36,11 +36,11 @@ export const SiteConfigSchema = z.object({
   navigation: z.array(NavItem).default([]),
   blog: z
     .object({
-      postPerPage: z.number().default(10),
+      postPerPage: z.number().int().positive().default(5),
       showTags: z.boolean().default(true),
       showCategories: z.boolean().default(true),
     })
-    .default(() => ({ postPerPage: 10, showTags: true, showCategories: true })),
+    .default(() => ({ postPerPage: 5, showTags: true, showCategories: true })),
   portfolio: z
     .object({
       title: z.string().default('Portfolio'),

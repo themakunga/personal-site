@@ -40,10 +40,10 @@
     </nav>
 
     <PostComments
-      v-if="post.comments?.show || post.comments?.enable"
+      v-if="post.show_comments || post.enable_comments"
       :slug="slugParts.join('/')"
-      :show="!!post.comments?.show"
-      :enable="!!post.comments?.enable"
+      :show="!!post.show_comments"
+      :enable="!!post.enable_comments"
     />
   </article>
 

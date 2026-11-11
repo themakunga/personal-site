@@ -16,9 +16,9 @@ export default defineContentConfig({
         tags: z.array(z.string()).default([]),
         draft: z.boolean().default(false),
         audio: z.enum(['es-CL', 'es-MX', 'en-US']).optional(),
-        comments: z
-          .object({ show: z.boolean().default(false), enable: z.boolean().default(false) })
-          .default({ show: false, enable: false }),
+        featured: z.boolean().default(false),
+        show_comments: z.boolean().default(false),
+        enable_comments: z.boolean().default(false),
       }),
     }),
     portfolio: defineCollection({
