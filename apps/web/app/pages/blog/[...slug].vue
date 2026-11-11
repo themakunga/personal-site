@@ -18,6 +18,27 @@
       <ContentRenderer :value="post" />
     </div>
 
+    <nav v-if="surroundings?.some(Boolean)" class="post__navigation" aria-label="Post navigation">
+      <NuxtLink
+        v-if="surroundings?.[0]"
+        :to="surroundings[0].path.replace(/^\/post/, '/blog')"
+        rel="prev"
+        class="post__previous"
+      >
+        <span>← Previous post</span>
+        {{ surroundings[0].title }}
+      </NuxtLink>
+      <NuxtLink
+        v-if="surroundings?.[1]"
+        :to="surroundings[1].path.replace(/^\/post/, '/blog')"
+        rel="next"
+        class="post__next"
+      >
+        <span>Next post →</span>
+        {{ surroundings[1].title }}
+      </NuxtLink>
+    </nav>
+
     <PostComments
       v-if="post.comments?.show || post.comments?.enable"
       :slug="slugParts.join('/')"
@@ -44,13 +65,28 @@ const slugParts = computed(() => {
 
 const contentPath = computed(() => `/post/${slugParts.value.join('/')}`)
 
-const { data: post } = await useAsyncData(`post-${contentPath.value}`, () =>
-  queryCollection('post').path(contentPath.value).first(),
+const { data: post } = await useAsyncData(
+  () => `post-${contentPath.value}`,
+  () => queryCollection('post').path(contentPath.value).first(),
 )
 
 if (!post.value) {
   throw createError({ statusCode: 404, statusMessage: 'Post not found' })
 }
+
+const { data: navigation } = await useAsyncData('post-navigation', () =>
+  queryCollection('post')
+    .where('draft', '=', false)
+    .order('updated_at', 'ASC')
+    .order('path', 'ASC')
+    .select('path', 'title')
+    .all(),
+)
+const surroundings = computed(() => {
+  const posts = navigation.value ?? []
+  const index = posts.findIndex((item) => item.path === contentPath.value)
+  return index < 0 ? [] : [posts[index - 1], posts[index + 1]]
+})
 
 const audioSrc = computed(
   () =>
@@ -65,10 +101,10 @@ const formatDate = (d: Date | string) =>
   })
 
 useSeoMeta({
-  title: `${post.value?.title} — ${config.site.name}`,
-  description: post.value?.description,
-  ogTitle: post.value?.title,
-  ogDescription: post.value?.description,
+  title: () => `${post.value?.title} — ${config.site.name}`,
+  description: () => post.value?.description,
+  ogTitle: () => post.value?.title,
+  ogDescription: () => post.value?.description,
 })
 </script>
 
@@ -99,6 +135,42 @@ useSeoMeta({
 .post__audio {
   width: 100%;
   margin-top: 1rem;
+}
+
+.post__navigation {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--bg-highlight);
+}
+
+.post__navigation a {
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
+
+.post__navigation span {
+  display: block;
+  color: var(--fg-muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.post__next {
+  grid-column: 2;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .post__navigation {
+    grid-template-columns: 1fr;
+  }
+
+  .post__next {
+    grid-column: 1;
+  }
 }
 
 .tag {

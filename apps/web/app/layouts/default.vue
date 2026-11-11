@@ -23,12 +23,24 @@
         <SocialLinks />
       </div>
       <p class="site-footer__text">{{ config.footer?.text }}</p>
+      <a href="/rss.xml" class="site-footer__rss">RSS</a>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 const config = useAppConfig()
+
+useHead({
+  link: [
+    {
+      rel: 'alternate',
+      type: 'application/rss+xml',
+      title: `${config.site.name} — RSS`,
+      href: new URL('/rss.xml', config.site.url).href,
+    },
+  ],
+})
 </script>
 
 <style scoped>
@@ -120,5 +132,10 @@ const config = useAppConfig()
   color: var(--comment);
   font-size: 0.8rem;
   margin: 0;
+}
+
+.site-footer__rss {
+  color: var(--blue);
+  justify-self: start;
 }
 </style>

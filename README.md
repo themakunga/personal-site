@@ -64,6 +64,25 @@ Local imports refresh automatically while the Docker stack is running; productio
 rebuild with `make prod`.
 Run preparation checks with `node --import tsx --test scripts/*.test.ts`.
 
+## Post navigation and RSS
+
+Each article links to the previous (older) and next (newer) published entry by `updated_at`.
+Drafts are excluded, and the first and last entries show only the neighbor that exists.
+Navigation updates the article body, title and audio source without requiring a reload.
+
+The RSS 2.0 feed is available at `/rss.xml` (`https://nicolasvillarroel.cl/rss.xml` in production).
+It contains published post titles, summaries, canonical links and publication dates, ordered by
+their latest update. A footer link and an HTML alternate-feed link expose it to readers.
+The feed is regenerated with the static site when content changes.
+
+Caddy serves each route's generated `index.html` before falling back to Nuxt's `200.html`,
+so direct loads and reloads retain the requested page. Rebuild the web image to apply changes.
+Check the served site, including adjacent links, reload payloads and RSS discovery, with:
+
+```sh
+python3 scripts/check_blog_navigation.py http://localhost:8081
+```
+
 ## Image optimization and build caches
 
 Content preparation converts PNG and JPEG assets to WebP at quality 80, limits both dimensions
