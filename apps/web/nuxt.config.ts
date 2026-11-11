@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   modules: ['@nuxt/content', '@nuxt/eslint'],
+  app: {
+    head: {
+      link: [{ rel: 'icon', type: 'image/x-icon', href: '/blog-icon.ico' }],
+    },
+  },
   vite: {
     server: {
       watch: { usePolling: process.env.WATCH_POLLING === 'true' },
