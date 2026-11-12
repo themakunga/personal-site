@@ -113,7 +113,7 @@ The site repository's **Publish Runtime Images** workflow builds four Linux amd6
 | --------------------------------- | ---------------------------------------------------------------------------------- |
 | `personal-site-renderer`          | Installed Node dependencies, ImageMagick, application source and static generation |
 | `personal-site-tts`               | Piper, Opus encoding and the narration script                                      |
-| `personal-site-api`               | Persistent comments and authentication service                                     |
+| `personal-site-comments-api`      | Persistent comments and authentication service                                     |
 | `personal-site-web`               | Caddy configuration and static HTTP serving                                        |
 
 Images use `sha-<full personal-site commit>` tags. `make` selects the current site commit by default;

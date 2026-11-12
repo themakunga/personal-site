@@ -26,7 +26,7 @@ jobs:
           - image: renderer
             file: docker/web.Dockerfile
             target: renderer
-          - image: api
+          - image: comments-api
             file: docker/api.Dockerfile
             target: ''
           - image: tts

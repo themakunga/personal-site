@@ -1,5 +1,5 @@
 # Hono API
-# Build: docker build -f docker/api.Dockerfile -t ghcr.io/themakunga/personal-site-api .
+# Build: docker build -f docker/api.Dockerfile -t ghcr.io/themakunga/personal-site-comments-api .
 FROM node:24-alpine AS build
 RUN apk add --no-cache python3 make g++
 RUN npm install -g pnpm@12.5.1

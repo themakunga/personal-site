@@ -22,7 +22,7 @@ services:
       - api
 
   api:
-    image: ghcr.io/themakunga/personal-site-api:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
+    image: ghcr.io/themakunga/personal-site-comments-api:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     networks:
       - backend
     volumes:
