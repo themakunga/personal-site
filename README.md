@@ -140,6 +140,9 @@ OAuth sign-in requires provider credentials in a local `.env` file (see `.env.ex
 
 ## Comments
 
+See [Comments and social login setup](COMMENTS_SETUP.md) for the step-by-step Google, GitHub,
+Apple and LinkedIn implementation and verification checklist.
+
 Posts opt in through frontmatter (documented in `personal-content`):
 
 ```yaml
