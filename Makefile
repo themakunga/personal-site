@@ -21,7 +21,7 @@ detach: volumes ## Build and start the local stack without following logs
 deploy: ## Pull site + content, then publish using prebuilt images
 	git pull --ff-only
 	git -C ../personal-content pull --ff-only
-	$(MAKE) prod
+	$(MAKE) prod SITE_IMAGE_TAG=sha-$$(git rev-parse HEAD)
 
 prod: pull ## Generate audio and pages, publish, then start production without builds
 	$(PROD_COMPOSE) run --rm --no-deps tts --once

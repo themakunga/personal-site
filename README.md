@@ -127,6 +127,8 @@ Images use `sha-<full personal-site commit>` tags. `make` selects the current si
 `SITE_IMAGE_TAG` can explicitly select an already-published compatible version. Wait for its image
 workflow to succeed before deploying that revision. The images contain application code, not posts,
 portfolio content, generated audio or credentials. A content-only commit never builds an image.
+`make deploy` pins the site SHA after pulling source so code and runtime images stay in sync.
+Use `make prod SITE_IMAGE_TAG=sha-<commit>` when deliberately selecting a compatible image version.
 
 ```sh
 make pull   # Download missing runtime/tool images for the current site revision

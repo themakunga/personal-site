@@ -7,6 +7,45 @@ from pathlib import Path
 
 
 class ProductionAudioTest(unittest.TestCase):
+    def test_deploy_uses_the_site_revision_after_pulling(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            site = Path(directory)
+            shutil.copyfile(
+                Path(__file__).resolve().parents[1] / "Makefile", site / "Makefile"
+            )
+            (site / "revision").write_text("old")
+            bin_dir = site / "bin"
+            bin_dir.mkdir()
+            git = bin_dir / "git"
+            git.write_text(
+                "#!/bin/sh\nset -eu\n"
+                'case "$*" in\n'
+                '  "pull --ff-only") printf new > revision ;;\n'
+                '  "-C ../personal-content pull --ff-only") ;;\n'
+                '  "rev-parse HEAD") cat revision ;;\n'
+                "  *) exit 24 ;;\nesac\n"
+            )
+            docker = bin_dir / "docker"
+            docker.write_text(
+                '#!/bin/sh\nset -eu\nprintf "%s\\n" "$SITE_IMAGE_TAG" >> tags\n'
+            )
+            git.chmod(0o755)
+            docker.chmod(0o755)
+            environment = {
+                **os.environ,
+                "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"],
+            }
+            environment.pop("SITE_IMAGE_TAG", None)
+            result = subprocess.run(
+                ["make", "deploy"],
+                cwd=site,
+                env=environment,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(set((site / "tags").read_text().splitlines()), {"sha-new"})
+
     def test_reuses_images_and_stops_before_publication_on_tool_failure(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
