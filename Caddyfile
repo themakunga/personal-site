@@ -5,7 +5,7 @@
 
 :80 {
     # Serve static site
-    root * /srv
+    root * /srv/current
     file_server
     header /rss.xml Content-Type "application/rss+xml; charset=utf-8"
 

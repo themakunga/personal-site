@@ -153,9 +153,10 @@ enable_comments: true
 - [ ] Commit and publish the scoped site changes and any selected article changes when authorized.
 - [ ] Provision the private production environment before restarting the API.
 - [ ] On the deployment host, verify the site and content revisions and clean worktrees.
-- [ ] Use the existing `make deploy` flow to pull both repositories, build and restart production.
-      For a host-only environment change at already-verified revisions, `make prod` rebuilds/restarts
-      without pulling. Both flows also run the existing article-audio preparation.
+- [ ] Confirm the reusable GHCR images for the selected site revision have been published.
+- [ ] Use `make deploy` to pull both repositories, reuse the images and publish generated content.
+      For a host-only environment change at already-verified revisions, `make prod` regenerates
+      and reconciles services without pulling source. Both flows run article-audio preparation.
 - [ ] Confirm the expected revisions and healthy web/API services; verify secrets are passed by
       presence checks without printing their values.
 - [ ] Confirm SQLite data survives the restart and the API can reach the providers.

@@ -1,6 +1,5 @@
-# Static site served by Caddy, built entirely inside Docker (no registry, no host Node needed).
-# Needs .content/ (a copy of the personal-content repo), created by `make prod`.
-FROM node:24-alpine AS build
+# Reusable content renderer. Content and caches are mounted when this image runs.
+FROM node:24-alpine AS renderer
 RUN apk add --no-cache python3 make g++ imagemagick imagemagick-jpeg imagemagick-webp
 RUN npm install -g pnpm@12.5.1
 WORKDIR /app
@@ -11,15 +10,11 @@ RUN --mount=type=cache,id=personal-site-pnpm,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile --store-dir /pnpm/store
 COPY scripts scripts
 COPY apps/web apps/web
-COPY .content/site.yaml /content/site.yaml
-COPY .content/posts /content/posts
-COPY .content/portfolio /content/portfolio
-COPY .content/assets /content/assets
+RUN mkdir -p generated
 ENV CONTENT_DIR=/content
-RUN --mount=type=cache,id=personal-site-images,target=/app/.cache/images,sharing=locked \
-    pnpm generate
+CMD ["sh", "-c", "pnpm generate && python3 scripts/publish_site.py apps/web/.output/public /publish"]
 
-FROM caddy:2-alpine
+# Reusable HTTP server. The renderer publishes into the shared volume.
+FROM caddy:2-alpine AS web
 COPY Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /app/apps/web/.output/public /srv
 EXPOSE 80

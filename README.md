@@ -60,8 +60,8 @@ Docker uses the same pipeline. To prepare content manually from the repository r
 pnpm content:prepare
 ```
 
-Local imports refresh automatically while the Docker stack is running; production requires a
-rebuild with `make prod`.
+Local imports refresh automatically while the Docker stack is running; production regenerates
+and publishes pages with `make prod`, using prebuilt images.
 Run preparation checks with `node --import tsx --test scripts/*.test.ts`.
 
 ## Post navigation and RSS
@@ -76,7 +76,7 @@ their latest update. A footer link and an HTML alternate-feed link expose it to 
 The feed is regenerated with the static site when content changes.
 
 Caddy serves each route's generated `index.html` before falling back to Nuxt's `200.html`,
-so direct loads and reloads retain the requested page. Rebuild the web image to apply changes.
+so direct loads and reloads retain the requested page. Publish a new web image when Caddy changes.
 Check the served site, including adjacent links, reload payloads and RSS discovery, with:
 
 ```sh
@@ -97,13 +97,77 @@ version and compression settings. Unchanged images are reused; changed images ge
 URLs, which also prevent stale browser/CDN responses. Local Docker keeps this cache in the
 `web_image_cache` volume.
 
-Production Docker/Podman builds keep persistent cache mounts for pnpm's package store and image
-conversion. Dependency layers precede source copies, and generated
-output, local caches and Obsidian metadata are excluded from the build context. Normal `make prod`
-and `make deploy` commands reuse these caches automatically on the same builder; no special flag
-is needed. A completely unchanged build can reuse its final build layer. Content or code changes
-still run Nuxt generation, while cached dependencies and images reduce repeated work.
-The first build and builds after pruning builder caches are cold.
+Production uses the same persistent `personal-site_web_image_cache` volume for image conversion.
+Dependencies and build tools are already installed in the renderer image; neither content nor
+generated audio is baked into runtime images. GitHub Actions caches image build layers separately.
+Nuxt still generates the complete static site when publishing content; unchanged image conversions
+and narration are reused. The first generation after migration may have a cold image cache because
+the previous production cache lived inside the container builder.
+
+## Production with reusable GHCR images
+
+The site repository's **Publish Runtime Images** workflow builds four Linux amd64 images whenever
+`main` changes, then dispatches deployment only after every image is published:
+
+| Image under `ghcr.io/themakunga/` | Purpose                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------- |
+| `personal-site-renderer`          | Installed Node dependencies, ImageMagick, application source and static generation |
+| `personal-site-tts`               | Piper, Opus encoding and the narration script                                      |
+| `personal-site-api`               | Persistent comments and authentication service                                     |
+| `personal-site-web`               | Caddy configuration and static HTTP serving                                        |
+
+Images use `sha-<full personal-site commit>` tags. `make` selects the current site commit by default;
+`SITE_IMAGE_TAG` can explicitly select an already-published compatible version. Wait for its image
+workflow to succeed before deploying that revision. The images contain application code, not posts,
+portfolio content, generated audio or credentials. A content-only commit never builds an image.
+
+```sh
+make pull   # Download missing runtime/tool images for the current site revision
+make prod   # Reuse images, generate changed audio, render and publish, reconcile services
+make deploy # Fast-forward site and content repositories, then run make prod
+```
+
+`make prod` mounts `../personal-content` read-only, generates audio into `apps/web/public/audio`,
+then renders inside a disposable tool container. It copies the completed output into a release
+directory in `personal-site-prod_site_public` and atomically switches its `current` symlink.
+Caddy serves that volume read-only, with shared SELinux labeling for Podman. A narration,
+generation or copy failure leaves the previous
+site active. Publication retains the current and previous release; older release directories are
+removed. The long-running API and web services are reconciled without builds or forced restarts.
+No API restart is needed for a content-only update with the same image tag.
+
+The production project remains `personal-site-prod`, preserving `personal-site-prod_sqlite_data`.
+Existing `personal-site_tts_audio_cache` and `personal-site_tts_voice_models` volumes are reused,
+as is the host audio output directory. Do not remove these volumes during migration. Local
+development continues to use `docker-compose.local.yml` and can build images with `make up`.
+
+### First publication and migration
+
+1. Publish the site changes and wait for all four GHCR images for that commit to be available.
+2. Confirm the deployment host can pull them. GHCR packages must either allow public reads or the
+   runtime user must already be logged in with private `read:packages` access. Never commit tokens.
+3. In `personal-content`, replace its old image-building workflow with the **Deploy Content**
+   workflow. It runs `make deploy` on a configured self-hosted runner for content pushes, manual
+   runs and the site's `trigger-build` dispatch. Configure the `DEPLOY_DIR` variable and
+   the site's `CONTENT_REPO_DISPATCH_TOKEN` secret. Confirm the runner is online and can access
+   both repositories and the container engine. Disable/remove the old content build workflow first
+   so an overlapping deployment cannot run the obsolete build path.
+4. Back up SQLite, verify clean host checkouts and existing cache/model volumes, then run
+   `make deploy` on the host. The first run fills the shared public volume before replacing Caddy.
+5. Verify direct article loads, navigation, RSS, images and audio using the existing HTTP checkers.
+   Record source revisions separately from published image tags and the live deployment.
+
+The previous release directory is retained for inspection, but application rollback also requires
+the matching source/image revision. `make prod` does not clear CDN caches or skip Nuxt generation.
+If a selected SHA has not been published, image pulling fails before generation/publication.
+Without the dispatch secret, image publication succeeds with a manual-deployment notice.
+At the 2026-11-12 inspection, GitHub reported no repository self-hosted runners for `personal-content`,
+no `DEPLOY_DIR` variable and no repository secrets for `personal-site`. Automatic deployment therefore
+requires provisioning those separately; the manual `make deploy` path does not depend on them.
+
+References: [GHCR publication](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images),
+[image build caches](https://docs.docker.com/build/ci/github-actions/cache/),
+[Compose pull policies](https://docs.docker.com/reference/cli/docker/compose/pull/).
 
 ## Article audio
 
@@ -119,16 +183,17 @@ The supported values are `es-CL`, `es-MX`, and `en-US`. Piper does not currently
 make audio        # Generate changed articles
 make audio-force  # Regenerate all enabled articles
 make audio-test   # Test audio generation, caching and delivery checks
-python3 -m unittest discover -s scripts -p test_production_audio.py # Test production audio ordering
+python3 -m unittest discover -s scripts -p test_production_audio.py # Test no-build deploy and failure ordering
+python3 -m unittest discover -s scripts -p test_publish_site.py     # Test atomic site publication
 ```
 
-`make prod` (also called by `make deploy`) generates changed article audio before building the
-production web image, so `.ogg` files are included in the served site. A synthesis failure stops
+`make prod` (also called by `make deploy`) runs the prebuilt TTS image before static generation,
+so `.ogg` files are copied into the published release. A synthesis failure stops
 the deployment. The first run downloads voice models; later runs reuse cached models and audio.
 Audio is encoded as mono Opus at a 32 kb/s VBR target, tuned for speech. The output extension
 is `.ogg`, and the player declares `audio/ogg; codecs=opus`. Cache hashes include encoder settings;
 the first run after this format change regenerates enabled articles, then unchanged audio is reused.
-Legacy MP3 files are excluded from the production build context. The player versions Ogg URLs
+Generated audio is excluded from image build contexts. The player versions Ogg URLs
 with the article's update timestamp to avoid stale CDN responses.
 Verify a deployed player's audio using its generated article HTML:
 

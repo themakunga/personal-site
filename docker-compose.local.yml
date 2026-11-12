@@ -13,8 +13,8 @@ services:
       - ../personal-content:/content:ro
       - ./apps/web/public/audio:/output
       - ./scripts:/app/scripts:ro
-      - tts_audio_cache:/cache
-      - tts_voice_models:/voices
+      - tts_audio_cache:/cache:z
+      - tts_voice_models:/voices:z
 
   web:
     build:
@@ -37,7 +37,7 @@ services:
       - ./apps/web/nuxt.config.ts:/app/apps/web/nuxt.config.ts:ro
       - ./scripts:/app/scripts:ro
       - ../personal-content:/content:ro
-      - web_image_cache:/app/.cache/images
+      - web_image_cache:/app/.cache/images:z
 
   proxy:
     image: caddy:2-alpine

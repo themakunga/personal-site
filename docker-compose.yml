@@ -11,9 +11,9 @@ services:
       - web
 
   web:
-    build:
-      context: .
-      dockerfile: docker/web.Dockerfile
+    image: ghcr.io/themakunga/personal-site-web:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
+    volumes:
+      - site_public:/srv:ro,z
     networks:
       - edge
       - backend
@@ -22,9 +22,7 @@ services:
       - api
 
   api:
-    build:
-      context: .
-      dockerfile: docker/api.Dockerfile
+    image: ghcr.io/themakunga/personal-site-api:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     networks:
       - backend
     volumes:
@@ -43,8 +41,38 @@ services:
       - '127.0.0.1:3001:3001'
     restart: unless-stopped
 
+  renderer:
+    image: ghcr.io/themakunga/personal-site-renderer:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
+    profiles: [tools]
+    volumes:
+      - ../personal-content:/content:ro
+      - ./apps/web/public/audio:/app/apps/web/public/audio:ro
+      - web_image_cache:/app/.cache/images:z
+      - site_public:/publish:z
+
+  tts:
+    image: ghcr.io/themakunga/personal-site-tts:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
+    profiles: [tools]
+    environment:
+      CONTENT_DIR: /content/posts
+      OUTPUT_DIR: /output
+      CACHE_DIR: /cache
+      VOICES_DIR: /voices
+    volumes:
+      - ../personal-content:/content:ro
+      - ./apps/web/public/audio:/output
+      - tts_audio_cache:/cache:z
+      - tts_voice_models:/voices:z
+
 volumes:
   sqlite_data:
+  site_public:
+  web_image_cache:
+    name: personal-site_web_image_cache
+  tts_audio_cache:
+    name: personal-site_tts_audio_cache
+  tts_voice_models:
+    name: personal-site_tts_voice_models
 
 networks:
   edge:

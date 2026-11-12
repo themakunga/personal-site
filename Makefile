@@ -1,9 +1,11 @@
-.PHONY: help up detach deploy prod prod-down down logs audio audio-force audio-test
+.PHONY: help up detach deploy prod prod-down pull down logs audio audio-force audio-test
 
 # Host port for the local proxy (default 8081); override with: make up PROXY_PORT=<port>
 export PROXY_PORT ?= 8081
 
 COMPOSE := docker compose -f docker-compose.local.yml
+PROD_COMPOSE := docker compose -p personal-site-prod -f docker-compose.yml
+export SITE_IMAGE_TAG ?= sha-$(shell git rev-parse HEAD)
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "; printf "\nUsage:\n  make <target>\n\nTargets:\n"} /^[a-zA-Z_-]+:.*## / {printf "  %-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -15,18 +17,21 @@ detach: ## Build and start the local stack without following logs
 	$(COMPOSE) up --build -d
 	@echo "Site: http://localhost:$(PROXY_PORT)"
 
-deploy: ## Pull site + content (fast-forward only), rebuild and restart production
+deploy: ## Pull site + content, then publish using prebuilt images
 	git pull --ff-only
 	git -C ../personal-content pull --ff-only
 	$(MAKE) prod
 
-prod: ## Build images on this host and start production (incl. Cloudflare tunnel)
-	$(MAKE) audio
-	rm -rf .content && mkdir .content && cp -a ../personal-content/. .content/ && rm -rf .content/.git
-	docker compose -p personal-site-prod -f docker-compose.yml up --build -d
+prod: pull ## Generate audio and pages, publish, then start production without builds
+	$(PROD_COMPOSE) run --rm --no-deps tts --once
+	$(PROD_COMPOSE) run --rm --no-deps renderer
+	$(PROD_COMPOSE) up -d --no-build --pull never web api cloudflared
+
+pull: ## Download missing production/tool images for this site revision
+	$(PROD_COMPOSE) pull --policy missing web api renderer tts cloudflared
 
 prod-down: ## Stop production
-	docker compose -p personal-site-prod -f docker-compose.yml down
+	$(PROD_COMPOSE) down
 
 down: ## Stop the local stack
 	$(COMPOSE) down
@@ -35,12 +40,12 @@ logs: ## Follow local stack logs
 	$(COMPOSE) logs -f
 
 audio: ## Generate audio for changed articles
-	$(COMPOSE) build tts
-	$(COMPOSE) run --rm tts --once
+	$(PROD_COMPOSE) pull --policy missing tts
+	$(PROD_COMPOSE) run --rm --no-deps tts --once
 
 audio-force: ## Regenerate audio for every enabled article
-	$(COMPOSE) build tts
-	$(COMPOSE) run --rm tts --force
+	$(PROD_COMPOSE) pull --policy missing tts
+	$(PROD_COMPOSE) run --rm --no-deps tts --force
 
 audio-test: ## Run audio generator and delivery tests in Docker
 	$(COMPOSE) build tts
