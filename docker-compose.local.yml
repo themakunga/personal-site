@@ -13,8 +13,8 @@ services:
       - ../personal-content:/content:ro
       - ./apps/web/public/audio:/output
       - ./scripts:/app/scripts:ro
-      - tts_audio_cache:/cache:z
-      - tts_voice_models:/voices:z
+      - tts_audio_cache:/cache
+      - tts_voice_models:/voices
 
   web:
     build:
@@ -29,6 +29,7 @@ services:
     environment:
       CONTENT_DIR: /content
       WATCH_POLLING: 'true'
+      NUXT_TELEMETRY_DISABLED: '1'
     volumes:
       - ./apps/web/app:/app/apps/web/app
       - ./apps/web/content:/app/apps/web/content
@@ -37,7 +38,7 @@ services:
       - ./apps/web/nuxt.config.ts:/app/apps/web/nuxt.config.ts:ro
       - ./scripts:/app/scripts:ro
       - ../personal-content:/content:ro
-      - web_image_cache:/app/.cache/images:z
+      - web_image_cache:/app/.cache/images
 
   proxy:
     image: caddy:2-alpine
@@ -68,5 +69,11 @@ services:
 volumes:
   local_sqlite_data:
   tts_audio_cache:
+    name: personal-site_tts_audio_cache
+    external: true
   tts_voice_models:
+    name: personal-site_tts_voice_models
+    external: true
   web_image_cache:
+    name: personal-site_web_image_cache
+    external: true

@@ -130,7 +130,7 @@ make deploy # Fast-forward site and content repositories, then run make prod
 `make prod` mounts `../personal-content` read-only, generates audio into `apps/web/public/audio`,
 then renders inside a disposable tool container. It copies the completed output into a release
 directory in `personal-site-prod_site_public` and atomically switches its `current` symlink.
-Caddy serves that volume read-only, with shared SELinux labeling for Podman. A narration,
+Caddy serves that volume read-only. Publication avoids copying private SELinux labels from the renderer. A narration,
 generation or copy failure leaves the previous
 site active. Publication retains the current and previous release; older release directories are
 removed. The long-running API and web services are reconciled without builds or forced restarts.
@@ -140,6 +140,12 @@ The production project remains `personal-site-prod`, preserving `personal-site-p
 Existing `personal-site_tts_audio_cache` and `personal-site_tts_voice_models` volumes are reused,
 as is the host audio output directory. Do not remove these volumes during migration. Local
 development continues to use `docker-compose.local.yml` and can build images with `make up`.
+The three shared cache/model volumes are external to both Compose projects. `make volumes`
+creates missing ones without changing existing data; the normal start/audio/deploy targets invoke
+it automatically. Direct Compose commands require running `make volumes` once first.
+Nuxt telemetry is disabled in project configuration and renderer/development environments, so
+generation does not prompt for consent. Make targets also disable Podman's external-provider notice;
+actual errors and other warnings remain visible.
 
 ### First publication and migration
 

@@ -24,8 +24,13 @@ class ProductionAudioTest(unittest.TestCase):
             docker.write_text(
                 "#!/bin/sh\n"
                 "set -eu\n"
+                'test "${PODMAN_COMPOSE_WARNING_LOGS:-}" = false\n'
                 'case "$*" in\n'
-                '  "compose -p personal-site-prod -f docker-compose.yml pull --policy missing web api renderer tts cloudflared") ;;\n'
+                '  "volume create personal-site_web_image_cache" | "volume create personal-site_tts_audio_cache" | "volume create personal-site_tts_voice_models") touch "$3" ;;\n'
+                '  "compose -p personal-site-prod -f docker-compose.yml pull --policy missing web api renderer tts cloudflared")\n'
+                "    test -f personal-site_web_image_cache\n"
+                "    test -f personal-site_tts_audio_cache\n"
+                "    test -f personal-site_tts_voice_models ;;\n"
                 '  "compose -p personal-site-prod -f docker-compose.yml run --rm --no-deps tts --once")\n'
                 '    test "${FAIL_TTS:-0}" = 0 || exit 23\n'
                 "    mkdir -p apps/web/public/audio\n"

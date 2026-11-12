@@ -13,7 +13,7 @@ services:
   web:
     image: ghcr.io/themakunga/personal-site-web:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     volumes:
-      - site_public:/srv:ro,z
+      - site_public:/srv:ro
     networks:
       - edge
       - backend
@@ -44,11 +44,13 @@ services:
   renderer:
     image: ghcr.io/themakunga/personal-site-renderer:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     profiles: [tools]
+    environment:
+      NUXT_TELEMETRY_DISABLED: '1'
     volumes:
       - ../personal-content:/content:ro
       - ./apps/web/public/audio:/app/apps/web/public/audio:ro
-      - web_image_cache:/app/.cache/images:z
-      - site_public:/publish:z
+      - web_image_cache:/app/.cache/images
+      - site_public:/publish
 
   tts:
     image: ghcr.io/themakunga/personal-site-tts:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
@@ -61,18 +63,21 @@ services:
     volumes:
       - ../personal-content:/content:ro
       - ./apps/web/public/audio:/output
-      - tts_audio_cache:/cache:z
-      - tts_voice_models:/voices:z
+      - tts_audio_cache:/cache
+      - tts_voice_models:/voices
 
 volumes:
   sqlite_data:
   site_public:
   web_image_cache:
     name: personal-site_web_image_cache
+    external: true
   tts_audio_cache:
     name: personal-site_tts_audio_cache
+    external: true
   tts_voice_models:
     name: personal-site_tts_voice_models
+    external: true
 
 networks:
   edge:
