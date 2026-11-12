@@ -26,7 +26,11 @@ class ProductionAudioTest(unittest.TestCase):
                 "set -eu\n"
                 'test "${PODMAN_COMPOSE_WARNING_LOGS:-}" = false\n'
                 'case "$*" in\n'
-                '  "volume create personal-site_web_image_cache" | "volume create personal-site_tts_audio_cache" | "volume create personal-site_tts_voice_models") touch "$3" ;;\n'
+                '  "volume inspect personal-site_web_image_cache" | "volume inspect personal-site_tts_audio_cache" | "volume inspect personal-site_tts_voice_models") test -f "$3" ;;\n'
+                '  "volume create personal-site_web_image_cache" | "volume create personal-site_tts_audio_cache" | "volume create personal-site_tts_voice_models")\n'
+                '    test ! -f "$3" || exit 125\n'
+                '    test "${FAIL_VOLUME:-0}" = 0 || { echo "Volume creation failed" >&2; exit 23; }\n'
+                '    printf preserved-data > "$3" ;;\n'
                 '  "compose -p personal-site-prod -f docker-compose.yml pull --policy missing web api renderer tts cloudflared")\n'
                 "    test -f personal-site_web_image_cache\n"
                 "    test -f personal-site_tts_audio_cache\n"
@@ -60,10 +64,23 @@ class ProductionAudioTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertTrue((site / "services-started").exists())
-            for failure in ("FAIL_TTS", "FAIL_RENDER"):
+            result = subprocess.run(
+                ["make", "prod"],
+                cwd=site,
+                env=environment,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertEqual(
+                (site / "personal-site_web_image_cache").read_text(), "preserved-data"
+            )
+            for failure in ("FAIL_TTS", "FAIL_RENDER", "FAIL_VOLUME"):
                 with self.subTest(failure=failure):
                     (site / "site-published").unlink(missing_ok=True)
                     (site / "services-started").unlink(missing_ok=True)
+                    if failure == "FAIL_VOLUME":
+                        (site / "personal-site_web_image_cache").unlink()
                     result = subprocess.run(
                         ["make", "prod"],
                         cwd=site,
@@ -74,6 +91,8 @@ class ProductionAudioTest(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertFalse((site / "site-published").exists())
                     self.assertFalse((site / "services-started").exists())
+                    if failure == "FAIL_VOLUME":
+                        self.assertIn("Volume creation failed", result.stderr)
 
 
 if __name__ == "__main__":

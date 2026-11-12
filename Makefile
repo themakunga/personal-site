@@ -32,9 +32,9 @@ pull: volumes ## Download missing production/tool images for this site revision
 	$(PROD_COMPOSE) pull --policy missing web api renderer tts cloudflared
 
 volumes: ## Ensure shared caches exist without changing existing volumes
-	@docker volume create personal-site_web_image_cache >/dev/null
-	@docker volume create personal-site_tts_audio_cache >/dev/null
-	@docker volume create personal-site_tts_voice_models >/dev/null
+	@docker volume inspect personal-site_web_image_cache >/dev/null 2>&1 || docker volume create personal-site_web_image_cache >/dev/null
+	@docker volume inspect personal-site_tts_audio_cache >/dev/null 2>&1 || docker volume create personal-site_tts_audio_cache >/dev/null
+	@docker volume inspect personal-site_tts_voice_models >/dev/null 2>&1 || docker volume create personal-site_tts_voice_models >/dev/null
 
 prod-down: ## Stop production
 	$(PROD_COMPOSE) down
