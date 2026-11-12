@@ -1,7 +1,11 @@
 <template>
   <ul class="social-links">
-    <li v-for="link in config.social" :key="link.id">
-      <a :href="link.url" target="_blank" rel="noopener noreferrer">
+    <li v-for="link in links" :key="link.id">
+      <a
+        :href="link.url"
+        :target="link.id === 'rss' ? undefined : '_blank'"
+        :rel="link.id === 'rss' ? undefined : 'noopener noreferrer'"
+      >
         <span
           class="social-links__icon"
           :style="{ '--icon': `url(/icons/mdi/mdi-${icons[link.id] ?? 'link-variant'}.svg)` }"
@@ -15,6 +19,14 @@
 
 <script setup lang="ts">
 const config = useAppConfig()
+const links = computed(() => [
+  ...config.social.filter((link) => link.id !== 'rss'),
+  {
+    id: 'rss',
+    url: '/rss',
+    label: new URL('/rss', config.site.url).href.replace(/^https?:\/\//, ''),
+  },
+])
 const icons: Record<string, string> = {
   github: 'github',
   linkedin: 'linkedin',
@@ -22,6 +34,7 @@ const icons: Record<string, string> = {
   twitter: 'twitter',
   bluesky: 'butterfly',
   reddit: 'reddit',
+  rss: 'rss',
 }
 </script>
 

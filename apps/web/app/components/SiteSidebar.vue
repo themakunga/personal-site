@@ -14,7 +14,7 @@
       <a class="sidebar__link" :href="`mailto:${config.profile.email}`">{{
         config.profile.email
       }}</a>
-      <SocialLinks v-if="config.social.length" />
+      <SocialLinks />
     </section>
 
     <nav v-if="config.blog.showCategories && categories.length" aria-label="Categorías">

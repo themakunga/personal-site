@@ -70,10 +70,17 @@ Each article links to the previous (older) and next (newer) published entry by `
 Drafts are excluded, and the first and last entries show only the neighbor that exists.
 Navigation updates the article body, title and audio source without requiring a reload.
 
-The RSS 2.0 feed is available at `/rss.xml` (`https://nicolasvillarroel.cl/rss.xml` in production).
-It contains published post titles, summaries, canonical links and publication dates, ordered by
-their latest update. A footer link and an HTML alternate-feed link expose it to readers.
-The feed is regenerated with the static site when content changes.
+The social links include an RSS icon pointing to `/rss`, a focused reading view with complete
+published posts and the subscription URL. Desktop sidebar and mobile footer links open this HTML
+page rather than the raw XML file.
+
+The RSS 2.0 subscription feed remains at `/rss.xml`
+(`https://nicolasvillarroel.cl/rss.xml` in production). Both `description` and `content:encoded`
+contain the complete formatted article, including code, lists and images. Links and images use
+absolute URLs so feed apps can load them outside the site. Titles, canonical links and publication
+dates are included, ordered by latest update; drafts are excluded from both views.
+HTML alternate-feed links let RSS apps discover the XML feed from `/rss` or any normal site page.
+Both views regenerate with the static site when content changes.
 
 Caddy serves each route's generated `index.html` before falling back to Nuxt's `200.html`,
 so direct loads and reloads retain the requested page. Publish a new web image when Caddy changes.

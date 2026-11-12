@@ -29,7 +29,7 @@ class Page(HTMLParser):
                 for rel in attrs.get("rel", "").split():
                     if rel in ("prev", "next"):
                         self.neighbors[rel] = attrs["href"]
-            if attrs.get("href") == "/rss.xml":
+            if attrs.get("href") == "/rss":
                 self.feed_link = True
         if tag == "link" and attrs.get("type") == "application/rss+xml":
             self.rss = attrs.get("href")
@@ -64,6 +64,9 @@ def check_site(base):
     channel = rss.find("channel")
     assert channel is not None
     posts = channel.findall("item")
+    for post in posts:
+        content = post.findtext("{http://purl.org/rss/1.0/modules/content/}encoded")
+        assert content and "<p>" in content, "RSS item is missing its complete HTML body"
     paths = [urlparse(post.findtext("link")).path for post in posts]
     assert len(paths) == len(set(paths)), "RSS contains duplicate posts"
     for index, path in enumerate(paths):
@@ -77,11 +80,11 @@ def check_site(base):
         assert page.rss and urlparse(page.rss).path == "/rss.xml"
         assert page.feed_link, "Missing visible RSS link"
         check_page(base, path + "?reload-check=1")
-    for path in ("/", "/blog", "/about", "/portfolio"):
+    for path in ("/", "/blog", "/about", "/portfolio", "/rss"):
         page = check_page(base, path)
         assert page.rss and page.feed_link, f"Missing RSS discovery on {path}"
     print(
-        f"Blog checks passed: {len(paths)} posts, adjacent links, direct loads and RSS"
+        f"Blog checks passed: {len(paths)} posts, adjacent links, direct loads and full-content RSS"
     )
 
 

@@ -19,11 +19,10 @@
     </main>
 
     <footer class="site-footer container">
-      <div v-if="config.social.length" class="footer-social">
+      <div class="footer-social">
         <SocialLinks />
       </div>
       <p class="site-footer__text">{{ config.footer?.text }}</p>
-      <a href="/rss.xml" class="site-footer__rss">RSS</a>
     </footer>
   </div>
 </template>
@@ -132,10 +131,5 @@ useHead({
   color: var(--comment);
   font-size: 0.8rem;
   margin: 0;
-}
-
-.site-footer__rss {
-  color: var(--blue);
-  justify-self: start;
 }
 </style>

@@ -1,4 +1,4 @@
-"""Build a fixture site and check homepage selection, static pagination and comment flags."""
+"""Build a fixture site and check homepage, comment flags and full-content RSS views."""
 
 import json
 import os
@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 from html.parser import HTMLParser
+import xml.etree.ElementTree as ET
 
 from check_blog_navigation import Page
 
@@ -71,8 +72,17 @@ def main():
                 "image": "/assets/hero.svg" if 5 <= index <= 11 or index == 13 else "  ",
                 "show_comments": index in (1, 3), "enable_comments": index in (2, 3),
             }
+            body = "Example post.\n"
+            if index == 0:
+                metadata["title"] = "Post 00 & <RSS>"
+                body += (
+                    "\n## Complete article\n\nA **formatted** paragraph.\n\n"
+                    "![Hero](/assets/hero.svg)\n\n[Next](./post-01)\n\n"
+                    "```html\n<script>example & code</script> ]]>\n```\n\n"
+                    "Final RSS body marker.\n"
+                )
             (source / f"posts/post-{index:02}.md").write_text(
-                "---\n" + json.dumps(metadata) + "\n---\nExample post.\n"
+                "---\n" + json.dumps(metadata) + "\n---\n" + body
             )
         try:
             run(["--import", "tsx", "scripts/prepare-content.ts"], cwd=ROOT,
@@ -96,12 +106,35 @@ def main():
                 all_posts.extend(home.posts["latest-posts"])
             assert all_posts == [path(0), *[path(i) for i in range(12, 0, -1)]]
             assert not (public / "blog/post-13/index.html").exists(), "Draft was prerendered"
+            feed = ET.parse(public / "rss.xml")
+            items = feed.findall("channel/item")
+            assert len(items) == 13, "Feed must include every published post and no drafts"
+            assert items[0].findtext("title") == "Post 00 & <RSS>"
+            full_html = items[0].findtext("{http://purl.org/rss/1.0/modules/content/}encoded")
+            assert full_html == items[0].findtext("description")
+            for value in (
+                "Final RSS body marker.", "<strong>formatted</strong>",
+                'src="https://example.com/assets/hero.svg"',
+                'href="https://example.com/blog/post-01"',
+                "&lt;script&gt;example &amp; code&lt;/script&gt;",
+            ):
+                assert value in full_html, value
+            reader = (public / "rss/index.html").read_text()
+            assert reader.count('class="reader__post"') == 13
+            assert "Final RSS body marker." in reader
+            assert 'href="https://example.com/blog/post-01"' in reader
+            assert "Post 13" not in reader, "Draft content leaked into reading mode"
+            assert 'value="https://example.com/rss.xml"' in reader
+            home_html = (public / "index.html").read_text()
+            assert 'href="/rss"' in home_html and "mdi-rss.svg" in home_html
+            assert 'href="/rss.xml"' not in home_html, "Visible RSS links must open reading mode"
+            assert (public / "icons/mdi/mdi-rss.svg").is_file()
             for index in range(4):
                 html = (public / f"blog/post-{index:02}/index.html").read_text()
                 assert ('class="comments"' in html) == (index > 0)
                 assert ("Aún no hay comentarios." in html) == (index in (1, 3))
                 assert ('class="comments__form"' in html) == (index in (2, 3))
-            print("Homepage checks passed: featured, six image tiles, 5/5/3 pagination, drafts, reloads and independent comment flags")
+            print("Homepage and RSS checks passed: featured, tiles, pagination, drafts, comment flags, full article bodies and reading links")
         finally:
             run(["--import", "tsx", "scripts/prepare-content.ts"], cwd=ROOT)
 

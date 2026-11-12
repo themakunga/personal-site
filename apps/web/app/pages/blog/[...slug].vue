@@ -14,9 +14,7 @@
       </audio>
     </header>
 
-    <div class="post__body prose">
-      <ContentRenderer :value="post" />
-    </div>
+    <PostBody :value="post" class="post__body" />
 
     <nav v-if="surroundings?.some(Boolean)" class="post__navigation" aria-label="Post navigation">
       <NuxtLink
@@ -184,44 +182,6 @@ useSeoMeta({
 }
 
 .not-found {
-  color: var(--fg-muted);
-}
-
-/* prose styles for rendered markdown */
-:deep(.prose) {
-  color: var(--fg);
-  line-height: 1.8;
-}
-
-:deep(.prose h1),
-:deep(.prose h2),
-:deep(.prose h3) {
-  color: var(--yellow);
-  margin: 1.5rem 0 0.5rem;
-}
-
-:deep(.prose code) {
-  background: var(--bg-highlight);
-  padding: 0.1em 0.4em;
-  border-radius: 3px;
-  font-size: 0.9em;
-}
-
-:deep(.prose pre) {
-  background: var(--bg-dark);
-  padding: 1rem;
-  border-radius: 6px;
-  overflow-x: auto;
-}
-
-:deep(.prose pre code) {
-  background: none;
-  padding: 0;
-}
-
-:deep(.prose blockquote) {
-  border-left: 3px solid var(--blue);
-  padding-left: 1rem;
   color: var(--fg-muted);
 }
 </style>
