@@ -240,8 +240,10 @@ The admin API listens on `127.0.0.1:3001` **inside the API container**. Run it t
 `docker exec`; forwarding the host's port 3001 does not reach the container's loopback listener:
 
 ```bash
-ssh nicolas@192.168.5.153 docker exec personal-site-prod-api-1 \
-  node -e 'fetch("http://127.0.0.1:3001/comments").then(r => r.text()).then(console.log)'
+ssh nicolas@192.168.5.153
+# On motherbase:
+docker exec personal-site-prod-api-1 node -e \
+  'fetch("http://127.0.0.1:3001/comments").then(r => r.text()).then(console.log)'
 ```
 
 To approve one reviewed comment, run on motherbase (replace `COMMENT_ID`):
