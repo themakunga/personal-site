@@ -2,6 +2,7 @@
 	# Global options
 	admin off
 	skip_install_trust
+	default_sni {$COMMENTS_ADMIN_HOST}
 }
 
 :80 {
