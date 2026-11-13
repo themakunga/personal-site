@@ -11,10 +11,46 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
   process.env.BETTER_AUTH_SECRET = 'isolated-comment-test-session-secret-over-32-characters'
   process.env.ALTCHA_HMAC_KEY = 'isolated-comment-test-captcha-secret'
   process.env.COMMENT_POLICY_URL = 'http://fixture/comment-policy.json'
+  process.env.COMMENTS_ADMIN_TOKEN = 'isolated-admin-test-access-token-over-32-characters'
   const { auth } = await import('../apps/api/src/auth.ts')
   const { db } = await import('../apps/api/src/db.ts')
   const { default: comments } = await import('../apps/api/src/routes/comments.ts')
   const { default: admin } = await import('../apps/api/src/admin/index.ts')
+  const adminHeaders = { Authorization: `Bearer ${process.env.COMMENTS_ADMIN_TOKEN}` }
+  assert.equal((await admin.request('/comments')).status, 401)
+  assert.equal(
+    (await admin.request('/stats', { headers: { Authorization: 'Bearer incorrect' } })).status,
+    401,
+  )
+  const page = await admin.request('/')
+  assert.equal(page.status, 200)
+  assert.ok(page.headers.get('Content-Security-Policy')?.includes("script-src 'self'"))
+  assert.equal(page.headers.get('Cache-Control'), 'no-store')
+  const script = await admin.request('/admin.js')
+  assert.equal(script.status, 200)
+  assert.ok(script.headers.get('Content-Type')?.includes('application/javascript'))
+  assert.equal(
+    (await admin.request('/comments?status=invalid', { headers: adminHeaders })).status,
+    400,
+  )
+  assert.equal(
+    (await admin.request('/comments/missing', { method: 'DELETE', headers: adminHeaders })).status,
+    404,
+  )
+  assert.equal(
+    (
+      await admin.request('/comments/missing', {
+        method: 'PATCH',
+        headers: { ...adminHeaders, 'Content-Type': 'application/json' },
+        body: 'null',
+      })
+    ).status,
+    400,
+  )
+  const configuredToken = process.env.COMMENTS_ADMIN_TOKEN
+  delete process.env.COMMENTS_ADMIN_TOKEN
+  assert.equal((await admin.request('/stats', { headers: adminHeaders })).status, 503)
+  process.env.COMMENTS_ADMIN_TOKEN = configuredToken
   t.after(() => {
     db.close()
     rmSync(directory, { recursive: true, force: true })
@@ -104,12 +140,12 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
     updated_at: null,
   })
   assert.deepEqual(await (await comments.request('/enabled')).json(), { comments: [] })
-  const pending = await (await admin.request('/comments')).json()
+  const pending = await (await admin.request('/comments', { headers: adminHeaders })).json()
   assert.equal(pending.comments[0].id, id)
   const moderate = (status: string) =>
     admin.request(`/comments/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...adminHeaders, 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     })
   assert.equal((await moderate('visible')).status, 200)
@@ -130,7 +166,10 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
   assert.deepEqual(await (await comments.request('/writeonly')).json(), { comments: [] })
   assert.equal((await moderate('hidden')).status, 200)
   assert.deepEqual(await (await comments.request('/enabled')).json(), { comments: [] })
-  assert.equal((await admin.request(`/comments/${id}`, { method: 'DELETE' })).status, 200)
+  assert.equal(
+    (await admin.request(`/comments/${id}`, { method: 'DELETE', headers: adminHeaders })).status,
+    200,
+  )
   assert.equal(db.prepare('SELECT status FROM comments WHERE id = ?').get(id).status, 'deleted')
   for (let index = 0; index < 5; index++)
     assert.equal((await submit('enabled', {}, 'rate-limit-fixture')).status, 400)

@@ -27,7 +27,7 @@ app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 app.route('/api/captcha', captchaRouter)
 app.route('/api/comments', commentsRouter)
 
-// Admin app — separate listener on loopback only
+// Admin app — authenticated, exposed only through the private LAN proxy in production.
 const adminHono = new Hono()
 adminHono.route('/', adminApp)
 
@@ -38,6 +38,7 @@ serve({ fetch: app.fetch, port, hostname: '0.0.0.0' }, () => {
   console.log(`API listening on :${port}`)
 })
 
-serve({ fetch: adminHono.fetch, port: adminPort, hostname: '127.0.0.1' }, () => {
-  console.log(`Admin listening on 127.0.0.1:${adminPort}`)
+const adminHost = process.env.ADMIN_HOST ?? '127.0.0.1'
+serve({ fetch: adminHono.fetch, port: adminPort, hostname: adminHost }, () => {
+  console.log(`Admin listening on ${adminHost}:${adminPort}`)
 })

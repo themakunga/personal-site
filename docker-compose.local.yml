@@ -56,6 +56,8 @@ services:
       dockerfile: docker/api.Dockerfile
     environment:
       DATA_DIR: /data
+      ADMIN_HOST: 0.0.0.0
+      COMMENTS_ADMIN_TOKEN: ${COMMENTS_ADMIN_TOKEN:-local-development-admin-key-not-for-production}
       COMMENT_POLICY_URL: http://web:3000/comment-policy.json
       BETTER_AUTH_SECRET: local-development-only-secret-not-for-production
       PUBLIC_URL: http://localhost:${PROXY_PORT:-8081}

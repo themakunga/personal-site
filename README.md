@@ -241,21 +241,46 @@ current site session and clears the unsent draft; a failed request preserves bot
 Session cookie caching is disabled for immediate revocation. Other devices/provider accounts remain
 signed in. See the checklist's logout section for the acceptance steps.
 
-The admin API listens on `127.0.0.1:3001` **inside the API container**. Run it through SSH and
-`docker exec`; forwarding the host's port 3001 does not reach the container's loopback listener:
+### Private LAN moderation
+
+Open **https://192.168.5.153:3443/** from the local network. Sign in with `COMMENTS_ADMIN_TOKEN`
+from the private host/local `.env`. The panel lists pending/visible/hidden/deleted comments and lets
+an administrator approve, hide or delete them. Delete is a reversible status change; it retains the
+SQLite record. The key stays only in tab memory and is cleared on sign-out or reload.
+
+Caddy uses its internal CA for this private IP and persists it in `personal-site-prod_caddy_data`.
+Each client must trust that CA before normal HTTPS access. Retrieve **only the public certificate**
+through SSH (never export `root.key`):
 
 ```bash
-ssh nicolas@192.168.5.153
-# On motherbase:
-docker exec personal-site-prod-api-1 node -e \
-  'fetch("http://127.0.0.1:3001/comments").then(r => r.text()).then(console.log)'
+mkdir -p .tmp
+ssh nicolas@192.168.5.153 \
+  'docker exec personal-site-prod-web-1 cat /data/caddy/pki/authorities/local/root.crt' \
+  > .tmp/comments-admin-root.crt
 ```
 
-To approve one reviewed comment, run on motherbase (replace `COMMENT_ID`):
+Import that certificate into the intended client's trusted certificate store after verifying it
+came from motherbase. Trust is a separate client action; deployment does not change device trust.
+See [Caddy local HTTPS](https://caddyserver.com/docs/automatic-https#local-https).
+
+Only the configured LAN address publishes port 3443. The API's port 3001 has no host mapping and
+requires the admin key on every API request. The public site returns 404 for `/admin` and moderation
+API paths; no Cloudflare route was added. Keep this port free of router forwarding.
+Local development exposes the panel at `http://localhost:8081/admin/` through the loopback proxy.
+
+For terminal moderation, connect by SSH and use the container's private environment without
+printing the key. On motherbase:
 
 ```bash
 docker exec personal-site-prod-api-1 node -e \
-  'fetch("http://127.0.0.1:3001/comments/COMMENT_ID", {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({status:"visible"})}).then(r => r.text()).then(console.log)'
+  'fetch("http://127.0.0.1:3001/comments", {headers:{Authorization:"Bearer "+process.env.COMMENTS_ADMIN_TOKEN}}).then(r => r.text()).then(console.log)'
+```
+
+To approve one reviewed comment, replace `COMMENT_ID`:
+
+```bash
+docker exec personal-site-prod-api-1 node -e \
+  'fetch("http://127.0.0.1:3001/comments/COMMENT_ID", {method:"PATCH", headers:{Authorization:"Bearer "+process.env.COMMENTS_ADMIN_TOKEN,"Content-Type":"application/json"}, body:JSON.stringify({status:"visible"})}).then(r => r.text()).then(console.log)'
 ```
 
 ### Required environment (`.env` on the host)
@@ -268,6 +293,8 @@ docker exec personal-site-prod-api-1 node -e \
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`     | Google Cloud OAuth client (below)                                            |
 | `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | LinkedIn Developer application (below)                                       |
 | `ALTCHA_HMAC_KEY`                              | Any random secret: `openssl rand -hex 32`                                    |
+| `COMMENTS_ADMIN_HOST`                          | Private LAN address assigned to the host; default `192.168.5.153`            |
+| `COMMENTS_ADMIN_TOKEN`                         | Private random admin key, at least 32 characters; `openssl rand -base64 48`  |
 | `CLOUDFLARE_TUNNEL_TOKEN`                      | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure         |
 
 **GitHub** — https://github.com/settings/developers → _New OAuth App_.

@@ -1,11 +1,41 @@
 import { Hono } from 'hono'
 import { db } from '../db.ts'
+import { bearerAuth } from 'hono/bearer-auth'
+import { secureHeaders } from 'hono/secure-headers'
+import { adminPage, adminScript } from './page.ts'
 
-// ponytail: admin only on 127.0.0.1:3001, no auth needed (loopback only)
 const admin = new Hono()
+admin.use(
+  '*',
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'none'"],
+      formAction: ["'self'"],
+    },
+  }),
+)
+admin.use('*', async (c, next) => {
+  c.header('Cache-Control', 'no-store')
+  await next()
+})
+admin.get('/', (c) => c.html(adminPage))
+admin.get('/admin.js', (c) =>
+  c.body(adminScript, 200, { 'Content-Type': 'application/javascript; charset=utf-8' }),
+)
+admin.use('*', async (c, next) => {
+  const token = process.env.COMMENTS_ADMIN_TOKEN
+  if (!token || token.length < 32) return c.json({ error: 'Admin access is not configured' }, 503)
+  return bearerAuth({ token })(c, next)
+})
 
 admin.get('/comments', (c) => {
   const status = c.req.query('status') ?? 'pending'
+  if (!['pending', 'visible', 'hidden', 'deleted'].includes(status))
+    return c.json({ error: 'Invalid status' }, 400)
   const comments = db
     .prepare(
       `SELECT c.*, u.name as user_name, u.email as user_email
@@ -19,23 +49,23 @@ admin.get('/comments', (c) => {
 
 admin.patch('/comments/:id', async (c) => {
   const id = c.req.param('id')
-  const { status } = await c.req.json<{ status: string }>()
+  const body = await c.req.json().catch(() => null)
+  const status = body?.status
   const allowed = ['visible', 'hidden', 'deleted']
   if (!allowed.includes(status)) return c.json({ error: 'Invalid status' }, 400)
-  db.prepare(`UPDATE comments SET status = ?, updated_at = ? WHERE id = ?`).run(
-    status,
-    Date.now(),
-    id,
-  )
+  const result = db
+    .prepare(`UPDATE comments SET status = ?, updated_at = ? WHERE id = ?`)
+    .run(status, Date.now(), id)
+  if (!result.changes) return c.json({ error: 'Comment not found' }, 404)
   return c.json({ ok: true })
 })
 
 admin.delete('/comments/:id', (c) => {
   const id = c.req.param('id')
-  db.prepare(`UPDATE comments SET status = 'deleted', updated_at = ? WHERE id = ?`).run(
-    Date.now(),
-    id,
-  )
+  const result = db
+    .prepare(`UPDATE comments SET status = 'deleted', updated_at = ? WHERE id = ?`)
+    .run(Date.now(), id)
+  if (!result.changes) return c.json({ error: 'Comment not found' }, 404)
   return c.json({ ok: true })
 })
 

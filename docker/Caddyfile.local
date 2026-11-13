@@ -3,6 +3,11 @@
 }
 
 :80 {
+	redir /admin /admin/ 308
+	handle_path /admin/* {
+		reverse_proxy api:3001
+	}
+
 	handle /api/auth/* {
 		reverse_proxy api:3000
 	}

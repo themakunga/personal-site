@@ -14,6 +14,11 @@ services:
     image: ghcr.io/themakunga/personal-site-web:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     volumes:
       - site_public:/srv:ro
+      - caddy_data:/data
+    environment:
+      COMMENTS_ADMIN_HOST: ${COMMENTS_ADMIN_HOST:-192.168.5.153}
+    ports:
+      - '${COMMENTS_ADMIN_HOST:-192.168.5.153}:3443:3443'
     networks:
       - edge
       - backend
@@ -32,6 +37,8 @@ services:
       - DATA_DIR=/data
       - NODE_ENV=production
       - COMMENT_POLICY_URL=http://web/comment-policy.json
+      - ADMIN_HOST=0.0.0.0
+      - COMMENTS_ADMIN_TOKEN=${COMMENTS_ADMIN_TOKEN:?Set a private admin access key of at least 32 characters}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set a persistent random Better Auth secret}
       - PUBLIC_URL=${PUBLIC_URL}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}
@@ -42,9 +49,6 @@ services:
       - LINKEDIN_CLIENT_ID=${LINKEDIN_CLIENT_ID}
       - LINKEDIN_CLIENT_SECRET=${LINKEDIN_CLIENT_SECRET}
       - ALTCHA_HMAC_KEY=${ALTCHA_HMAC_KEY}
-    # Admin port exposed only on loopback
-    ports:
-      - '127.0.0.1:3001:3001'
     restart: unless-stopped
 
   renderer:
@@ -73,6 +77,7 @@ services:
       - tts_voice_models:/voices
 
 volumes:
+  caddy_data:
   sqlite_data:
   site_public:
   web_image_cache:

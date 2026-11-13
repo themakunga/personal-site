@@ -29,8 +29,9 @@ Keep the existing Better Auth integration, Hono API, SQLite storage, ALTCHA and 
   independently enforce `show_comments` and `enable_comments`.
 - Submission validates payload types, CAPTCHA, nonempty text, length/content, rate limits and any
   parent comment. New comments remain `pending`; public responses contain only visible comments.
-- Moderation listens on container loopback, not host loopback. Use SSH with `docker exec` below;
-  the old host-port-forward recipe does not reach this listener.
+- Moderation requires a private admin key. Caddy exposes its authenticated panel only through
+  `https://192.168.5.153:3443/` on the configured LAN address, using a persistent internal CA.
+  Port 3001 has no host mapping. The public site blocks moderation paths.
 
 Work through the checklist in order. Check a box only after verifying its result. Record evidence
 without credentials; distinguish local implementation, source publication and production deployment.
@@ -120,8 +121,8 @@ Use these exact production callback URLs:
 - [x] Give the production API outbound access through `edge`, retain `backend` and add no public port.
 - [x] Validate both Compose files using empty examples/fixtures, without printing secrets.
 - [x] Verify outbound HTTPS from the API to Google discovery, LinkedIn discovery and GitHub.
-- [x] Verify moderation through SSH + `docker exec` and public denial. The listener is on container
-      loopback; ordinary forwarding to the host's port 3001 is insufficient.
+- [x] Verify private moderation through SSH + `docker exec` and public denial.
+      LAN panel implementation uses key authentication and a separate HTTPS listener; see section 10.
 
 ## 4. Complete the application integration
 
@@ -156,7 +157,7 @@ enable_comments: true
 
 - [ ] Configure separate development callbacks where each provider supports them; the local proxy
       defaults to `http://localhost:8081`. Use an approved HTTPS test domain for Apple.
-- [x] Run `pnpm typecheck`, `pnpm lint`, 15 TypeScript tests and nine Python tests.
+- [x] Run `pnpm typecheck`, `pnpm lint`, 16 TypeScript tests and nine Python tests.
 - [x] Check scoped hooks/whitespace and generate 70 routes with real content.
 - [ ] For each configured provider, verify sign-in, consent cancellation, return to the same article,
       page reload with a valid session and sign-out.
@@ -184,13 +185,13 @@ enable_comments: true
 
 - [ ] Repeat the complete login, session reload and sign-out flow for Google, GitHub, Apple and LinkedIn.
 - [ ] Submit a test comment and confirm the pending notice and absence from the public list.
-- [x] Verify the private moderation route using SSH and container loopback:
+- [x] Verify the private moderation route using SSH and the admin key:
 
   ```sh
   ssh nicolas@192.168.5.153
   # On motherbase:
   docker exec personal-site-prod-api-1 node -e \
-    'fetch("http://127.0.0.1:3001/stats").then(r => console.log(r.status))'
+    'fetch("http://127.0.0.1:3001/stats", {headers:{Authorization:"Bearer "+process.env.COMMENTS_ADMIN_TOKEN}}).then(r => console.log(r.status))'
   ```
 
   Run the following commands **on motherbase** after connecting by SSH.
@@ -199,15 +200,15 @@ enable_comments: true
 
   ```sh
   docker exec personal-site-prod-api-1 node -e \
-    'fetch("http://127.0.0.1:3001/comments").then(r => r.text()).then(console.log)'
+    'fetch("http://127.0.0.1:3001/comments", {headers:{Authorization:"Bearer "+process.env.COMMENTS_ADMIN_TOKEN}}).then(r => r.text()).then(console.log)'
   docker exec personal-site-prod-api-1 node -e \
-    'fetch("http://127.0.0.1:3001/comments/COMMENT_ID", {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({status:"visible"})}).then(r => r.text()).then(console.log)'
+    'fetch("http://127.0.0.1:3001/comments/COMMENT_ID", {method:"PATCH", headers:{Authorization:"Bearer "+process.env.COMMENTS_ADMIN_TOKEN,"Content-Type":"application/json"}, body:JSON.stringify({status:"visible"})}).then(r => r.text()).then(console.log)'
   ```
 
 - [ ] Reload the article and confirm the approved comment appears once with the correct author.
 - [ ] Verify hiding/deleting the test comment removes it from public results.
 - [x] Verify public-field privacy in the isolated visible-comment regression; live public responses also contain no credentials.
-- [x] Verify public moderation API paths return 404; the listener remains on container loopback.
+- [x] Verify public moderation API paths return 404; port 3001 is not published on the host.
 - [x] Record tested revisions, providers, results and remaining checks below.
 - [ ] Schedule Apple JWT renewal after configuring Apple.
 
@@ -242,16 +243,39 @@ Run the focused checks with:
 node --import tsx --test scripts/logout.test.ts scripts/comment-logout.test.ts
 ```
 
+## 10. LAN moderation panel
+
+- [x] Implement a browser panel for pending, visible, hidden and deleted comments, with approve,
+      hide and delete controls; display user content as text and send credentials only in headers.
+- [x] Protect every moderation API request with a private key of at least 32 characters; fail closed
+      when unconfigured. Keep the key only in tab memory and clear it on panel logout/reload.
+- [x] Provision the key privately on motherbase and synchronize only the new admin settings into
+      the local `.env`, preserving existing credentials and 0600 permissions.
+- [x] Configure HTTPS with Caddy's internal CA and a persistent certificate volume; bind host port
+      3443 only to `COMMENTS_ADMIN_HOST` and remove the API's host port mapping.
+- [x] Add a development-only panel route through the loopback proxy at `/admin/`.
+- [x] Test authentication failures, authenticated approve/delete actions, plain-text rendering,
+      invalid/missing records and panel logout using the actual routes/script with isolated SQLite.
+- [ ] Verify the deployed panel from another LAN client with certificate verification enabled,
+      anonymous denial and authenticated list access, without exposing private comment data.
+- [ ] Trust the exported public CA certificate on each intended device; do not export its private key.
+- [ ] Complete browser keyboard/mobile QA and a clearly identified real comment approval/delete cycle.
+
+Panel: `https://192.168.5.153:3443/`. Access key: `COMMENTS_ADMIN_TOKEN` in the private `.env`.
+See [README: private LAN moderation](README.md#private-lan-moderation) for certificate retrieval and
+SSH commands. Deleting a comment changes its status to `deleted`; it does not physically erase the
+SQLite record. The panel shows the latest 100 comments for the selected status.
+
 ## Verified progress — 2026-11-12
 
 | Scope                       | Evidence                                                                                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Three provider entry points | `34d75ad`; workflow `43343376885`; names-only discovery, correct public callback URLs, state and Secure/HttpOnly cookies verified for Google/GitHub/LinkedIn |
 | Article permissions         | `645feb3`; workflow `43345230936`; API enforces the generated, published-only flags and reads changes without restart                                        |
-| Regression coverage         | 15 TypeScript and nine Python tests; isolated pending/approve/hide/delete cycle, input/CAPTCHA/rate-limit/privacy checks and session logout                  |
+| Regression coverage         | 16 TypeScript and nine Python tests; isolated pending/approve/hide/delete cycle, input/CAPTCHA/rate-limit/privacy checks and session logout                  |
 | Static generation           | 13-published/1-draft fixture checks every policy; restored real-content generation produces 70 routes; public RSS/navigation remains healthy                 |
 | Production safety           | Independent SQLite backup verified; stable private secrets, preserved database/cache volumes; no production test users/comments inserted                     |
-| Private moderation          | SSH plus `docker exec` reaches container loopback; public moderation API paths are denied                                                                    |
+| Private moderation          | Key-authenticated SSH/API access and private HTTPS panel; public moderation API paths are denied                                                             |
 
 Next human steps: finish each provider's consent/login with a real account, reload, sign out, then
 submit one clearly identified test comment and approve/hide it privately. Developer-console app

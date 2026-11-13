@@ -1,42 +1,53 @@
 {
-    # Global options
-    admin off
+	# Global options
+	admin off
+	skip_install_trust
 }
 
 :80 {
-    # Serve static site
-    root * /srv/current
-    file_server
-    header /rss.xml Content-Type "application/rss+xml; charset=utf-8"
+	# Serve static site
+	root * /srv/current
+	file_server
+	header /rss.xml Content-Type "application/rss+xml; charset=utf-8"
 
-    # Allow only specific API paths — everything else under /api returns 404
-    handle /api/auth/* {
-        reverse_proxy api:3000
-    }
+	# Allow only specific API paths — everything else under /api returns 404
+	handle /api/auth/* {
+		reverse_proxy api:3000
+	}
 
-    handle /api/captcha/challenge {
-        reverse_proxy api:3000
-    }
+	handle /api/captcha/challenge {
+		reverse_proxy api:3000
+	}
 
-    @comments {
-        path /api/comments/*
-        method GET POST
-    }
-    handle @comments {
-        reverse_proxy api:3000
-    }
+	@comments {
+		path /api/comments/*
+		method GET POST
+	}
+	handle @comments {
+		reverse_proxy api:3000
+	}
 
-    # Deny all other /api/* paths
-    handle /api/* {
-        respond 404
-    }
+	# Deny all other /api/* paths
+	handle /api/* {
+		respond 404
+	}
 
-    # SPA fallback for Nuxt
-    handle {
-        try_files {path} {path}/index.html /200.html
-        file_server
-    }
+	@privateAdmin path /admin /admin/*
+	handle @privateAdmin {
+		respond 404
+	}
 
-    # Encode responses
-    encode zstd gzip
+	# SPA fallback for Nuxt
+	handle {
+		try_files {path} {path}/index.html /200.html
+		file_server
+	}
+
+	# Encode responses
+	encode zstd gzip
+}
+
+https://{$COMMENTS_ADMIN_HOST}:3443 {
+	tls internal
+	reverse_proxy api:3001
 }

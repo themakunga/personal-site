@@ -17,4 +17,4 @@ CMD ["sh", "-c", "pnpm generate && python3 scripts/publish_site.py apps/web/.out
 # Reusable HTTP server. The renderer publishes into the shared volume.
 FROM caddy:2-alpine AS web
 COPY Caddyfile /etc/caddy/Caddyfile
-EXPOSE 80
+EXPOSE 80 3443
