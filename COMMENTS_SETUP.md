@@ -249,7 +249,7 @@ node --import tsx --test scripts/logout.test.ts scripts/comment-logout.test.ts
 - [x] Implement a browser panel for pending, visible, hidden and deleted comments, with approve,
       hide and delete controls; display user content as text and send credentials only in headers.
 - [x] Protect every moderation API request with a private key of at least 32 characters; fail closed
-      when unconfigured. Keep the key only in tab memory and clear it on panel logout/reload.
+      when unconfigured. Keep the key out of browser storage; persist a revocable seven-day session in an HttpOnly cookie.
 - [x] Provision the key privately on motherbase and synchronize only the new admin settings into
       the local `.env`, preserving existing credentials and 0600 permissions.
 - [x] Configure HTTPS with Caddy's internal CA and a persistent certificate volume; bind host port

@@ -21,7 +21,7 @@ export const adminPage = `<!doctype html>
     <input id="token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="key-help" required>
     <button type="submit">Sign in</button>
     <p id="key-help" class="muted">Paste only the value of COMMENTS_ADMIN_TOKEN, without quotes, the variable name or terminal formatting.</p>
-    <p class="muted">The key stays in this tab's memory. Reloading or signing out clears it.</p>
+    <p class="muted">Sign-in lasts seven days in this browser. Sign out to revoke access early.</p>
   </form>
   <section id="panel" hidden>
     <label for="status">Status</label>
@@ -45,11 +45,9 @@ const input = document.querySelector('#token');
 const status = document.querySelector('#status');
 const list = document.querySelector('#comments');
 const message = document.querySelector('#message');
-let token = '';
 let busy = false;
 
-function signOut() {
-  token = '';
+function clearSession() {
   input.value = '';
   list.replaceChildren();
   panel.hidden = true;
@@ -58,13 +56,13 @@ function signOut() {
   input.focus();
 }
 
-async function request(path, method = 'GET', body) {
+async function request(path, method = 'GET', body, key) {
   const response = await fetch('./' + path, {
     method,
-    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    headers: { ...(key ? { Authorization: 'Bearer ' + key } : {}), 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  if (response.status === 401) signOut();
+  if (response.status === 401) clearSession();
   if (!response.ok) throw new Error(response.status === 401 ? 'Access denied. Check your admin key.' : 'Request failed (' + response.status + '). Try again.');
   return response.json();
 }
@@ -114,12 +112,11 @@ login.addEventListener('submit', event => {
   event.preventDefault();
   run(async () => {
     const candidate = input.value.trim();
-    token = '';
     if (!/^[A-Za-z0-9._~+\/-]+=*$/.test(candidate)) {
       input.focus();
       throw new Error('Paste only the key value from COMMENTS_ADMIN_TOKEN, without quotes, the variable name or terminal formatting.');
     }
-    token = candidate;
+    await request('session', 'POST', undefined, candidate);
     input.value = '';
     await load();
     login.hidden = true;
@@ -128,5 +125,18 @@ login.addEventListener('submit', event => {
 });
 status.addEventListener('change', () => run(load));
 document.querySelector('#refresh').addEventListener('click', () => run(load));
-document.querySelector('#logout').addEventListener('click', signOut);
+document.querySelector('#logout').addEventListener('click', () => run(async () => {
+  await request('session', 'DELETE');
+  clearSession();
+}));
+run(async () => {
+  try {
+    await load();
+    login.hidden = true;
+    panel.hidden = false;
+  } catch (error) {
+    if (!login.hidden && error.message.startsWith('Access denied')) message.textContent = '';
+    else throw error;
+  }
+});
 `

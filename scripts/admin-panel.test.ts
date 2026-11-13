@@ -77,21 +77,32 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
     createElement: (tag: string) => new Element(tag),
   }
   let requests = 0
-  const context = createContext({
+  let cookie = ''
+  const browser = {
     document,
-    fetch: (path: string, options: RequestInit) => {
+    fetch: async (path: string, options: RequestInit) => {
       requests++
-      new Headers(options.headers)
-      return admin.request(new URL(path, 'http://admin.fixture/'), options)
+      const headers = new Headers(options.headers)
+      if (cookie) headers.set('Cookie', cookie)
+      const response = await admin.request(new URL(path, 'https://admin.fixture/'), {
+        ...options,
+        headers,
+      })
+      const setCookie = response.headers.get('Set-Cookie')
+      if (setCookie) cookie = setCookie.split(';')[0]!
+      return response
     },
-  })
+  }
+  const context = createContext({ ...browser })
   runInContext(adminScript, context)
-  const settle = async () => {
-    for (let attempt = 0; attempt < 100 && runInContext('busy', context); attempt++) {
+  const settle = async (target = context) => {
+    for (let attempt = 0; attempt < 100 && runInContext('busy', target); attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 5))
     }
-    assert.equal(runInContext('busy', context), false, 'Panel action did not finish')
+    assert.equal(runInContext('busy', target), false, 'Panel action did not finish')
   }
+  await settle()
+  requests = 0
   for (const invalid of [
     'a'.repeat(37) + '│',
     'a'.repeat(37) + 'é',
@@ -105,7 +116,7 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
     await settle()
     assert.equal(requests, 0, 'Malformed keys must not reach fetch or a header constructor')
     assert.ok(elements.message!.textContent.includes('Paste only the key value'))
-    assert.equal(runInContext('token', context), '')
+    assert.equal(runInContext('typeof token', context), 'undefined')
     assert.equal(elements.token!.value, invalid)
     assert.equal(elements.panel!.hidden, true)
   }
@@ -114,12 +125,15 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
   await settle()
   assert.equal(elements.panel!.hidden, true)
   assert.ok(elements.message!.textContent.includes('Access denied'))
-  assert.equal(runInContext('token', context), '')
+  assert.equal(runInContext('typeof token', context), 'undefined')
   elements.token!.value = process.env.COMMENTS_ADMIN_TOKEN
   elements.login!.fire('submit')
   await settle()
   assert.equal(elements.panel!.hidden, false)
   assert.equal(elements.token!.value, '')
+  assert.ok(cookie.startsWith('__Host-comments-admin='))
+  assert.equal(db.prepare('SELECT count(*) AS count FROM admin_session').get().count, 1)
+  assert.ok(!cookie.includes(process.env.COMMENTS_ADMIN_TOKEN!))
   const article = elements.comments!.children[0]!
   assert.equal(article.children[0]!.textContent, '<img src=x onerror=alert(1)>')
   assert.equal(article.children[3]!.textContent, '<script>literal text</script>')
@@ -134,9 +148,40 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
     .fire('click')
   assert.equal(db.prepare('SELECT status FROM comments').get().status, 'deleted')
   assert.equal(elements.comments!.children.length, 0)
+  const replayCookie = cookie
+  const reloaded = createContext({ ...browser })
+  runInContext(adminScript, reloaded)
+  await settle(reloaded)
+  assert.equal(elements.panel!.hidden, false, 'Reload must restore the session')
   elements.logout!.fire('click')
-  assert.equal(runInContext('token', context), '')
+  await settle(reloaded)
+  assert.equal((await admin.request('/stats', { headers: { Cookie: replayCookie } })).status, 401)
+  assert.equal(runInContext('typeof token', context), 'undefined')
   assert.equal(elements.login!.hidden, false)
   assert.equal(elements.panel!.hidden, true)
   assert.equal(elements.comments!.children.length, 0)
+  const signIn = () =>
+    admin.request('/session', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + process.env.COMMENTS_ADMIN_TOKEN },
+    })
+  const response = await signIn()
+  const header = response.headers.get('Set-Cookie')!
+  for (const attribute of ['HttpOnly', 'Secure', 'SameSite=Strict', 'Max-Age=604800', 'Path=/'])
+    assert.ok(header.includes(attribute), attribute)
+  const saved = header.split(';')[0]!
+  assert.equal((await admin.request('/stats', { headers: { Cookie: saved } })).status, 200)
+  assert.equal(
+    (await admin.request('/session', { method: 'DELETE', headers: { Cookie: saved } })).status,
+    403,
+  )
+  assert.equal(
+    (await admin.request('/stats', { headers: { Cookie: saved + 'tampered' } })).status,
+    401,
+  )
+  db.prepare('UPDATE admin_session SET expires_at = ?').run(Date.now() - 1)
+  assert.equal((await admin.request('/stats', { headers: { Cookie: saved } })).status, 401)
+  const fresh = (await signIn()).headers.get('Set-Cookie')!.split(';')[0]!
+  process.env.COMMENTS_ADMIN_TOKEN = 'rotated-fixture-key-over-32-characters'
+  assert.equal((await admin.request('/stats', { headers: { Cookie: fresh } })).status, 401)
 })

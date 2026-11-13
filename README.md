@@ -249,7 +249,7 @@ from the private host/local `.env`, without the variable name, quotes or termina
 Malformed keys are rejected before a request is sent, without displaying their value.
 The panel lists pending/visible/hidden/deleted comments and lets
 an administrator approve, hide or delete them. Delete is a reversible status change; it retains the
-SQLite record. The key stays only in tab memory and is cleared on sign-out or reload.
+SQLite record. A Secure, HttpOnly, SameSite=Strict cookie restores access across reloads for seven days. Sign-out revokes the server-side session; rotating the admin key invalidates existing sessions.
 
 Caddy issues certificates for both the private IP and `motherbase.local` using its internal CA,
 persisted in `personal-site-prod_caddy_data`. The hostname requires LAN mDNS resolution.

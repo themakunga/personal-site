@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from 'node:crypto'
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
 import { Hono } from 'hono'
 import { db } from '../db.ts'
 import { bearerAuth } from 'hono/bearer-auth'
@@ -26,10 +28,51 @@ admin.get('/', (c) => c.html(adminPage))
 admin.get('/admin.js', (c) =>
   c.body(adminScript, 200, { 'Content-Type': 'application/javascript; charset=utf-8' }),
 )
+const cookieName = '__Host-comments-admin'
+const sessionSeconds = 7 * 24 * 60 * 60
+const hash = (value: string) => createHash('sha256').update(value).digest('hex')
+
+admin.post('/session', async (c) => {
+  const token = process.env.COMMENTS_ADMIN_TOKEN
+  if (!token || token.length < 32) return c.json({ error: 'Admin access is not configured' }, 503)
+  return bearerAuth({ token })(c, async () => {
+    const session = randomBytes(32).toString('hex')
+    db.prepare('DELETE FROM admin_session WHERE expires_at <= ?').run(Date.now())
+    db.prepare('INSERT INTO admin_session (id, expires_at, key_hash) VALUES (?, ?, ?)').run(
+      hash(session),
+      Date.now() + sessionSeconds * 1000,
+      hash(token),
+    )
+    setCookie(c, cookieName, session, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+      path: '/',
+      maxAge: sessionSeconds,
+    })
+    c.res = c.json({ ok: true })
+  })
+})
 admin.use('*', async (c, next) => {
   const token = process.env.COMMENTS_ADMIN_TOKEN
   if (!token || token.length < 32) return c.json({ error: 'Admin access is not configured' }, 503)
-  return bearerAuth({ token })(c, next)
+  if (c.req.header('Authorization')) return bearerAuth({ token })(c, next)
+  const session = getCookie(c, cookieName)
+  const valid =
+    session &&
+    db
+      .prepare('SELECT id FROM admin_session WHERE id = ? AND expires_at > ? AND key_hash = ?')
+      .get(hash(session), Date.now(), hash(token))
+  if (!valid) return c.json({ error: 'Unauthorized' }, 401)
+  if (c.req.method !== 'GET' && c.req.header('X-Admin-Request') !== '1')
+    return c.json({ error: 'Forbidden' }, 403)
+  await next()
+})
+admin.delete('/session', (c) => {
+  const session = getCookie(c, cookieName)
+  if (session) db.prepare('DELETE FROM admin_session WHERE id = ?').run(hash(session))
+  deleteCookie(c, cookieName, { secure: true, path: '/' })
+  return c.json({ ok: true })
 })
 
 admin.get('/comments', (c) => {

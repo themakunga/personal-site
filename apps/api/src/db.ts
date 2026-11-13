@@ -13,6 +13,12 @@ db.pragma('foreign_keys = ON')
 
 // Better Auth tables
 db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_session (
+    id TEXT PRIMARY KEY,
+    expires_at INTEGER NOT NULL,
+    key_hash TEXT NOT NULL
+  );
+
   CREATE TABLE IF NOT EXISTS "user" (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
