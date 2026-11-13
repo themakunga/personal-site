@@ -347,3 +347,9 @@ Run `python3 scripts/test_homepage.py` after installing the existing dependencie
 fixture site and check selection, prerendered pagination and all four flat comment flag combinations.
 It restores the imported source content afterwards; run the normal generate command to restore the
 production build output. `CONTENT_DIR` can select the source content repository.
+
+## Mermaid diagrams
+
+Fenced `mermaid` blocks render as diagrams in blog and portfolio Markdown. Mermaid loads only
+when a diagram is mounted and uses strict SVG sanitization. The source remains readable during
+loading, when JavaScript is disabled or if rendering fails. Other code blocks keep their highlighting.
