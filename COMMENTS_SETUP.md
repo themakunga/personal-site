@@ -10,7 +10,7 @@ updated_at: 2026-11-12T22:39:50-0300
 # Comments and social login setup
 
 Status: Google, GitHub and LinkedIn are deployed. Apple and real-account acceptance tests remain
-pending. Last verified production runtime: `645feb3` on motherbase, 2026-11-12. Provider credentials
+pending. Verified runtime before the logout update: `645feb3` on motherbase, 2026-11-12. Provider credentials
 are present; their developer-console settings have not been independently verified.
 
 ## Approach and current state
@@ -156,7 +156,7 @@ enable_comments: true
 
 - [ ] Configure separate development callbacks where each provider supports them; the local proxy
       defaults to `http://localhost:8081`. Use an approved HTTPS test domain for Apple.
-- [x] Run `pnpm typecheck`, `pnpm lint`, 13 TypeScript tests and nine Python tests.
+- [x] Run `pnpm typecheck`, `pnpm lint`, 15 TypeScript tests and nine Python tests.
 - [x] Check scoped hooks/whitespace and generate 70 routes with real content.
 - [ ] For each configured provider, verify sign-in, consent cancellation, return to the same article,
       page reload with a valid session and sign-out.
@@ -211,13 +211,44 @@ enable_comments: true
 - [x] Record tested revisions, providers, results and remaining checks below.
 - [ ] Schedule Apple JWT renewal after configuring Apple.
 
+## 9. Logout flow
+
+On an article that accepts comments, an authenticated reader selects **Sign out** next to the
+session name. The button shows **Signing out…** and disables comment submission while the request
+is pending. The frontend sends `POST /api/auth/sign-out` with the browser's same-origin cookies.
+
+On success, Better Auth deletes the current SQLite session and expires its cookies. The page stays
+on the article, clears the unsent draft, confirms **Signed out.** and shows the configured login
+buttons again. If the request fails, the current user and draft remain visible with an error and
+a retry. Logout is unavailable while a comment is being submitted.
+
+Session cookie caching is disabled so a revoked session cannot survive through an old cached
+cookie. This signs out the current site session; other devices and provider accounts remain signed in.
+
+- [x] Verify current-session deletion, expired cookies and immediate rejection of old cookies using
+      real Better Auth handlers and isolated SQLite; reject comment submission after logout.
+- [x] Verify that untrusted origins cannot log out the session and other site sessions remain valid.
+- [x] Exercise the actual Vue component's logout success, waiting, duplicate-click guard, failed
+      request and retry paths; clear the draft only after success.
+- [ ] With a real provider account in production, sign in, write an unsent draft, sign out and verify
+      the anonymous controls, cleared draft and success notice without leaving the article.
+- [ ] Reload the article and another open tab; confirm the closed session is anonymous and cannot
+      submit comments. Sign in again and verify commenting works.
+- [ ] Check logout with keyboard/mobile navigation and a simulated network failure in the browser.
+
+Run the focused checks with:
+
+```sh
+node --import tsx --test scripts/logout.test.ts scripts/comment-logout.test.ts
+```
+
 ## Verified progress — 2026-11-12
 
 | Scope                       | Evidence                                                                                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Three provider entry points | `34d75ad`; workflow `43343376885`; names-only discovery, correct public callback URLs, state and Secure/HttpOnly cookies verified for Google/GitHub/LinkedIn |
 | Article permissions         | `645feb3`; workflow `43345230936`; API enforces the generated, published-only flags and reads changes without restart                                        |
-| Regression coverage         | 13 TypeScript and nine Python tests; isolated pending/approve/hide/delete cycle, input/CAPTCHA/rate-limit/privacy checks                                     |
+| Regression coverage         | 15 TypeScript and nine Python tests; isolated pending/approve/hide/delete cycle, input/CAPTCHA/rate-limit/privacy checks and session logout                  |
 | Static generation           | 13-published/1-draft fixture checks every policy; restored real-content generation produces 70 routes; public RSS/navigation remains healthy                 |
 | Production safety           | Independent SQLite backup verified; stable private secrets, preserved database/cache volumes; no production test users/comments inserted                     |
 | Private moderation          | SSH plus `docker exec` reaches container loopback; public moderation API paths are denied                                                                    |

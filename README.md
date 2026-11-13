@@ -236,6 +236,11 @@ for each request, so content deployments update permissions without rebuilding o
 Reading requires `show_comments`; submission requires `enable_comments`. Missing articles are closed,
 and an unavailable policy returns 503. Standalone API development must set `COMMENT_POLICY_URL`.
 
+Authenticated readers can select **Sign out** next to their name. A successful logout revokes the
+current site session and clears the unsent draft; a failed request preserves both for retry.
+Session cookie caching is disabled for immediate revocation. Other devices/provider accounts remain
+signed in. See the checklist's logout section for the acceptance steps.
+
 The admin API listens on `127.0.0.1:3001` **inside the API container**. Run it through SSH and
 `docker exec`; forwarding the host's port 3001 does not reach the container's loopback listener:
 

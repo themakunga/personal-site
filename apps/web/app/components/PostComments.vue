@@ -21,16 +21,24 @@
     <div v-if="enable" class="comments__form">
       <template v-if="user">
         <p class="comments__muted">
-          Sesión: {{ user.name }} · <button class="link" @click="signOut">salir</button>
+          Sesión: {{ user.name }} ·
+          <button
+            class="link"
+            :disabled="signingOut || sending"
+            :aria-busy="signingOut"
+            @click="signOut"
+          >
+            {{ signingOut ? 'Signing out…' : 'Sign out' }}
+          </button>
         </p>
         <textarea
           v-model="draft"
           rows="4"
           maxlength="2000"
           placeholder="Escribe un comentario (sin enlaces ni HTML)"
-          :disabled="sending"
+          :disabled="sending || signingOut"
         />
-        <button class="btn" :disabled="sending || !draft.trim()" @click="send">
+        <button class="btn" :disabled="sending || signingOut || !draft.trim()" @click="send">
           {{ sending ? 'Enviando…' : 'Comentar' }}
         </button>
       </template>
@@ -71,6 +79,7 @@ const user = ref<{ name: string } | null>(null)
 const providers = ref<string[]>([])
 const draft = ref('')
 const sending = ref(false)
+const signingOut = ref(false)
 const notice = ref('')
 const formError = ref('')
 
@@ -121,8 +130,19 @@ async function signIn(provider: 'github' | 'google' | 'linkedin') {
 }
 
 async function signOut() {
-  await $fetch('/api/auth/sign-out', { method: 'POST' }).catch(() => {})
-  user.value = null
+  if (signingOut.value || sending.value) return
+  signingOut.value = true
+  formError.value = ''
+  try {
+    await $fetch('/api/auth/sign-out', { method: 'POST' })
+    user.value = null
+    draft.value = ''
+    notice.value = 'Signed out.'
+  } catch {
+    formError.value = 'Could not sign out. Try again.'
+  } finally {
+    signingOut.value = false
+  }
 }
 
 // ALTCHA proof-of-work: find n such that sha256(salt + n) === challenge, then send it base64-encoded.
