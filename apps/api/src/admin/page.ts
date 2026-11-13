@@ -18,8 +18,9 @@ export const adminPage = `<!doctype html>
   <h1>Comment moderation</h1>
   <form id="login">
     <label for="token">Admin access key</label>
-    <input id="token" type="password" autocomplete="off" required>
+    <input id="token" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="key-help" required>
     <button type="submit">Sign in</button>
+    <p id="key-help" class="muted">Paste only the value of COMMENTS_ADMIN_TOKEN, without quotes, the variable name or terminal formatting.</p>
     <p class="muted">The key stays in this tab's memory. Reloading or signing out clears it.</p>
   </form>
   <section id="panel" hidden>
@@ -112,7 +113,13 @@ async function run(action) {
 login.addEventListener('submit', event => {
   event.preventDefault();
   run(async () => {
-    token = input.value.trim();
+    const candidate = input.value.trim();
+    token = '';
+    if (!/^[A-Za-z0-9._~+\/-]+=*$/.test(candidate)) {
+      input.focus();
+      throw new Error('Paste only the key value from COMMENTS_ADMIN_TOKEN, without quotes, the variable name or terminal formatting.');
+    }
+    token = candidate;
     input.value = '';
     await load();
     login.hidden = true;

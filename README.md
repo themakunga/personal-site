@@ -243,12 +243,16 @@ signed in. See the checklist's logout section for the acceptance steps.
 
 ### Private LAN moderation
 
-Open **https://192.168.5.153:3443/** from the local network. Sign in with `COMMENTS_ADMIN_TOKEN`
-from the private host/local `.env`. The panel lists pending/visible/hidden/deleted comments and lets
+Open **https://motherbase.local:3443/** from the local network; the IP URL
+**https://192.168.5.153:3443/** also works. Sign in using only the value of `COMMENTS_ADMIN_TOKEN`
+from the private host/local `.env`, without the variable name, quotes or terminal formatting.
+Malformed keys are rejected before a request is sent, without displaying their value.
+The panel lists pending/visible/hidden/deleted comments and lets
 an administrator approve, hide or delete them. Delete is a reversible status change; it retains the
 SQLite record. The key stays only in tab memory and is cleared on sign-out or reload.
 
-Caddy uses its internal CA for this private IP and persists it in `personal-site-prod_caddy_data`.
+Caddy issues certificates for both the private IP and `motherbase.local` using its internal CA,
+persisted in `personal-site-prod_caddy_data`. The hostname requires LAN mDNS resolution.
 The host firewall must also allow TCP 3443 from the LAN; the scoped declaration and activation
 command are documented in [the checklist](COMMENTS_SETUP.md#10-lan-moderation-panel).
 Each client must trust that CA before normal HTTPS access. Retrieve **only the public certificate**

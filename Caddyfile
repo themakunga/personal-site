@@ -48,7 +48,7 @@
 	encode zstd gzip
 }
 
-https://{$COMMENTS_ADMIN_HOST}:3443 {
+https://{$COMMENTS_ADMIN_HOST}:3443, https://motherbase.local:3443 {
 	tls internal
 	reverse_proxy api:3001
 }

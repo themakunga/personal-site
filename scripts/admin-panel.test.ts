@@ -76,10 +76,14 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
     querySelectorAll: () => nodes.filter((node) => ['button', 'select'].includes(node.tag)),
     createElement: (tag: string) => new Element(tag),
   }
+  let requests = 0
   const context = createContext({
     document,
-    fetch: (path: string, options: RequestInit) =>
-      admin.request(new URL(path, 'http://admin.fixture/'), options),
+    fetch: (path: string, options: RequestInit) => {
+      requests++
+      new Headers(options.headers)
+      return admin.request(new URL(path, 'http://admin.fixture/'), options)
+    },
   })
   runInContext(adminScript, context)
   const settle = async () => {
@@ -87,6 +91,23 @@ test('LAN panel authenticates, renders plain text, approves, deletes and clears 
       await new Promise((resolve) => setTimeout(resolve, 5))
     }
     assert.equal(runInContext('busy', context), false, 'Panel action did not finish')
+  }
+  for (const invalid of [
+    'a'.repeat(37) + '│',
+    'a'.repeat(37) + 'é',
+    'a'.repeat(37) + '\nextra',
+    'COMMENTS_ADMIN_TOKEN=' + process.env.COMMENTS_ADMIN_TOKEN,
+    '"' + process.env.COMMENTS_ADMIN_TOKEN + '"',
+    '',
+  ]) {
+    elements.token!.value = invalid
+    elements.login!.fire('submit')
+    await settle()
+    assert.equal(requests, 0, 'Malformed keys must not reach fetch or a header constructor')
+    assert.ok(elements.message!.textContent.includes('Paste only the key value'))
+    assert.equal(runInContext('token', context), '')
+    assert.equal(elements.token!.value, invalid)
+    assert.equal(elements.panel!.hidden, true)
   }
   elements.token!.value = 'incorrect'
   elements.login!.fire('submit')

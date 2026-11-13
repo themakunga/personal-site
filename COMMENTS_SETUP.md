@@ -10,8 +10,8 @@ updated_at: 2026-11-12T23:53:47-0300
 # Comments and social login setup
 
 Status: Google, GitHub, LinkedIn, logout and the private moderation panel are deployed.
-The panel passes HTTPS/authentication checks from motherbase itself; another LAN client's access
-is pending host-firewall activation. Apple and real-account acceptance tests remain pending.
+The panel passes HTTPS/authentication checks from motherbase and another LAN client.
+Apple and real-account acceptance tests remain pending.
 Provider credentials are present; developer-console settings were not independently verified.
 
 ## Approach and current state
@@ -259,13 +259,17 @@ node --import tsx --test scripts/logout.test.ts scripts/comment-logout.test.ts
       invalid/missing records and panel logout using the actual routes/script with isolated SQLite.
 - [x] Verify deployed HTTPS/IP certificates, anonymous denial and authenticated filters/stats from
       motherbase itself. Caddy uses an explicit default SNI for clients connecting by IP.
-- [ ] Activate the firewall rule on motherbase and repeat those checks from another LAN client.
-      The listener is running, but the existing host firewall drops incoming TCP 3443. Root activation
-      is pending because `sudo -n` requires a password. No full Nix switch was executed.
+- [x] Verify access from another LAN client with certificate verification, anonymous denial and
+      authenticated filters/stats. The previous incoming TCP 3443 timeout is no longer reproduced;
+      this agent did not change the live firewall or run a Nix switch.
 - [ ] Trust the exported public CA certificate on each intended device; do not export its private key.
 - [ ] Complete browser keyboard/mobile QA and a clearly identified real comment approval/delete cycle.
 
-Panel: `https://192.168.5.153:3443/`. Access key: `COMMENTS_ADMIN_TOKEN` in the private `.env`.
+Panel: `https://motherbase.local:3443/` or `https://192.168.5.153:3443/`.
+Access key: only the value of `COMMENTS_ADMIN_TOKEN` in the private `.env`; exclude the variable
+name, quotes and copied terminal decorations. Unicode or malformed input is rejected before fetch,
+with a correction message that never contains the key. Both addresses use the same persistent CA;
+the hostname needs mDNS on the LAN.
 See [README: private LAN moderation](README.md#private-lan-moderation) for certificate retrieval and
 SSH commands. Deleting a comment changes its status to `deleted`; it does not physically erase the
 SQLite record. The panel shows the latest 100 comments for the selected status.
