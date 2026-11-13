@@ -9,6 +9,7 @@ const SCRIPT_RE = /<script/i
 const MAX_LENGTH = 2000
 
 export function validateMarkdown(text: string): string | null {
+  if (!text.trim()) return 'Comment cannot be empty'
   if (text.length > MAX_LENGTH) return `Comment too long (max ${MAX_LENGTH} chars)`
   if (IFRAME_RE.test(text)) return 'iframes are not allowed'
   if (SCRIPT_RE.test(text)) return 'Scripts are not allowed'

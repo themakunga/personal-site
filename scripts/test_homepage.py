@@ -89,6 +89,12 @@ def main():
                 env={**os.environ, "CONTENT_DIR": str(source)})
             run(["node_modules/nuxt/bin/nuxt.mjs", "generate"], cwd=WEB)
             public = WEB / ".output/public"
+            policy = json.loads((public / "comment-policy.json").read_text())
+            assert len(policy) == 13 and "post-13" not in policy, "Draft leaked into comment policy"
+            for index in range(13):
+                assert policy[f"post-{index:02}"] == {
+                    "show_comments": index in (1, 3), "enable_comments": index in (2, 3),
+                }
             path = lambda index: f"/blog/post-{index:02}"
             all_posts = []
             for number, indices in ((1, [0, 12, 11, 10, 9]), (2, range(8, 3, -1)), (3, range(3, 0, -1))):

@@ -31,6 +31,7 @@ services:
     environment:
       - DATA_DIR=/data
       - NODE_ENV=production
+      - COMMENT_POLICY_URL=http://web/comment-policy.json
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set a persistent random Better Auth secret}
       - PUBLIC_URL=${PUBLIC_URL}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}

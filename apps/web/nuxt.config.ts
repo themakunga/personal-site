@@ -23,7 +23,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       crawlLinks: true,
-      routes: ['/rss', '/rss.xml'],
+      routes: ['/rss', '/rss.xml', '/comment-policy.json'],
     },
   },
 })

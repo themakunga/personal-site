@@ -230,14 +230,25 @@ show_comments: true # render existing comments
 enable_comments: true # allow login and new comments
 ```
 
-New comments are stored as `pending` and are hidden until approved. The admin API listens on
-`127.0.0.1:3001` only, so reach it through an SSH tunnel:
+New comments are stored as `pending` and are hidden until approved. The generated
+`/comment-policy.json` contains only published article flags. The API reads it from the web service
+for each request, so content deployments update permissions without rebuilding or restarting the API.
+Reading requires `show_comments`; submission requires `enable_comments`. Missing articles are closed,
+and an unavailable policy returns 503. Standalone API development must set `COMMENT_POLICY_URL`.
+
+The admin API listens on `127.0.0.1:3001` **inside the API container**. Run it through SSH and
+`docker exec`; forwarding the host's port 3001 does not reach the container's loopback listener:
 
 ```bash
-ssh -L 3001:127.0.0.1:3001 nicolas@192.168.5.153
-curl localhost:3001/comments                                   # list pending
-curl -X PATCH localhost:3001/comments/<id> \
-  -H 'content-type: application/json' -d '{"status":"visible"}' # approve
+ssh nicolas@192.168.5.153 docker exec personal-site-prod-api-1 \
+  node -e 'fetch("http://127.0.0.1:3001/comments").then(r => r.text()).then(console.log)'
+```
+
+To approve one reviewed comment, run on motherbase (replace `COMMENT_ID`):
+
+```bash
+docker exec personal-site-prod-api-1 node -e \
+  'fetch("http://127.0.0.1:3001/comments/COMMENT_ID", {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({status:"visible"})}).then(r => r.text()).then(console.log)'
 ```
 
 ### Required environment (`.env` on the host)
