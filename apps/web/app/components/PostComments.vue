@@ -42,6 +42,9 @@
         <button v-if="providers.includes('google')" class="btn" @click="signIn('google')">
           Google
         </button>
+        <button v-if="providers.includes('linkedin')" class="btn" @click="signIn('linkedin')">
+          LinkedIn
+        </button>
       </template>
       <p v-if="notice" class="comments__notice">{{ notice }}</p>
       <p v-if="formError" class="comments__error">{{ formError }}</p>
@@ -104,7 +107,7 @@ async function loadProviders() {
   }
 }
 
-async function signIn(provider: 'github' | 'google') {
+async function signIn(provider: 'github' | 'google' | 'linkedin') {
   formError.value = ''
   try {
     const r = await $fetch<{ url?: string }>('/api/auth/sign-in/social', {

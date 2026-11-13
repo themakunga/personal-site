@@ -242,14 +242,15 @@ curl -X PATCH localhost:3001/comments/<id> \
 
 ### Required environment (`.env` on the host)
 
-| Variable                                   | Where to get it                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------- |
-| `PUBLIC_URL`, `TRUSTED_ORIGINS`            | Your public origin, e.g. `https://nicolasvillarroel.cl` (no trailing `/`)    |
-| `BETTER_AUTH_SECRET`                       | Generate once with `openssl rand -base64 48`; keep it stable across restarts |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth App (below)                                                     |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client (below)                                            |
-| `ALTCHA_HMAC_KEY`                          | Any random secret: `openssl rand -hex 32`                                    |
-| `CLOUDFLARE_TUNNEL_TOKEN`                  | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure         |
+| Variable                                       | Where to get it                                                              |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| `PUBLIC_URL`, `TRUSTED_ORIGINS`                | Your public origin, e.g. `https://nicolasvillarroel.cl` (no trailing `/`)    |
+| `BETTER_AUTH_SECRET`                           | Generate once with `openssl rand -base64 48`; keep it stable across restarts |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`     | GitHub OAuth App (below)                                                     |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`     | Google Cloud OAuth client (below)                                            |
+| `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET` | LinkedIn Developer application (below)                                       |
+| `ALTCHA_HMAC_KEY`                              | Any random secret: `openssl rand -hex 32`                                    |
+| `CLOUDFLARE_TUNNEL_TOKEN`                      | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure         |
 
 **GitHub** — https://github.com/settings/developers → _New OAuth App_.
 Homepage URL: `https://nicolasvillarroel.cl`.
@@ -262,11 +263,18 @@ your email; the `openid email profile` scopes are enough).
 Authorized JavaScript origin: `https://nicolasvillarroel.cl`.
 Authorized redirect URI: `https://nicolasvillarroel.cl/api/auth/callback/google`.
 
+**LinkedIn** — [Developer Portal](https://www.linkedin.com/developers/apps) → your app → _Products_.
+Enable _Sign In with LinkedIn using OpenID Connect_ and confirm access to `openid profile email`.
+Register `https://nicolasvillarroel.cl/api/auth/callback/linkedin` under its OAuth redirect URLs.
+Copy the client ID and secret into the private host `.env`.
+LinkedIn may omit email; the current login requires one and rejects profiles without it. Use another
+provider in that case. See [LinkedIn's OIDC documentation](https://learn.microsoft.com/en-us/linkedin/consumer/integrations/self-serve/sign-in-with-linkedin-v2).
+
 One provider is enough. Only providers with both credentials are registered and shown in the
 comment form; `/api/auth/providers` exposes provider names without credentials. Production requires
 a persistent `BETTER_AUTH_SECRET` and the API joins the outbound-capable edge network for OAuth
 token exchange. Keep the host `.env` private. After editing it, run `make prod` on the host so the
-API receives the updated environment. A successful redirect still requires completing Google's
+API receives the updated environment. A successful redirect still requires completing the provider's
 consent flow and configuring the exact callback in its developer console.
 
 ## Homepage

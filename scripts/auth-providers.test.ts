@@ -15,7 +15,16 @@ test('registers only social providers with complete credentials', (t) => {
       credentials: { GOOGLE_CLIENT_ID: 'test-google', GOOGLE_CLIENT_SECRET: 'test-secret' },
       expected: ['google'],
     },
+    {
+      credentials: { GITHUB_CLIENT_ID: 'test-github', GITHUB_CLIENT_SECRET: 'test-secret' },
+      expected: ['github'],
+    },
+    {
+      credentials: { LINKEDIN_CLIENT_ID: 'test-linkedin', LINKEDIN_CLIENT_SECRET: 'test-secret' },
+      expected: ['linkedin'],
+    },
     { credentials: { GITHUB_CLIENT_ID: 'incomplete' }, expected: [] },
+    { credentials: { LINKEDIN_CLIENT_ID: 'incomplete' }, expected: [] },
   ].entries()) {
     const result = spawnSync(
       process.execPath,
@@ -28,17 +37,24 @@ test('registers only social providers with complete credentials', (t) => {
           import assert from 'node:assert/strict';
           const { auth } = await import(${JSON.stringify(moduleUrl)});
           const providers = Object.keys(auth.options.socialProviders || {});
-          if (providers.includes('google')) {
+          for (const provider of providers) {
             const response = await auth.handler(new Request('http://localhost:3000/api/auth/sign-in/social', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3100' },
-              body: JSON.stringify({ provider: 'google', callbackURL: 'http://localhost:3100/blog/fixture' }),
+              body: JSON.stringify({ provider, callbackURL: 'http://localhost:3100/blog/fixture' }),
             }));
             assert.equal(response.status, 200);
             const data = await response.json();
             const url = new URL(data.url);
-            assert.equal(url.hostname, 'accounts.google.com');
-            assert.equal(url.searchParams.get('redirect_uri'), 'http://localhost:3000/api/auth/callback/google');
+            const hosts = { google: 'accounts.google.com', github: 'github.com', linkedin: 'www.linkedin.com' };
+            assert.equal(url.hostname, hosts[provider]);
+            assert.equal(url.searchParams.get('redirect_uri'), 'http://localhost:3000/api/auth/callback/' + provider);
+            assert.ok(url.searchParams.get('state'));
+            if (provider === 'linkedin') {
+              for (const scope of ['openid', 'profile', 'email']) {
+                assert.ok(url.searchParams.get('scope').split(' ').includes(scope));
+              }
+            }
             assert.ok(response.headers.get('set-cookie'));
           }
           console.log(JSON.stringify(providers));
@@ -58,6 +74,8 @@ test('registers only social providers with complete credentials', (t) => {
           GITHUB_CLIENT_SECRET: '',
           GOOGLE_CLIENT_ID: '',
           GOOGLE_CLIENT_SECRET: '',
+          LINKEDIN_CLIENT_ID: '',
+          LINKEDIN_CLIENT_SECRET: '',
           ...credentials,
         },
       },
