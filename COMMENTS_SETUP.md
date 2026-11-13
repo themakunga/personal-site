@@ -4,14 +4,15 @@ aliases: []
 tags: []
 created_at: 2026-11-12T17:09:54-0300
 draft: false
-updated_at: 2026-11-12T22:39:50-0300
+updated_at: 2026-11-12T23:53:47-0300
 ---
 
 # Comments and social login setup
 
-Status: Google, GitHub and LinkedIn are deployed. Apple and real-account acceptance tests remain
-pending. Verified runtime before the logout update: `645feb3` on motherbase, 2026-11-12. Provider credentials
-are present; their developer-console settings have not been independently verified.
+Status: Google, GitHub, LinkedIn, logout and the private moderation panel are deployed.
+The panel passes HTTPS/authentication checks from motherbase itself; another LAN client's access
+is pending host-firewall activation. Apple and real-account acceptance tests remain pending.
+Provider credentials are present; developer-console settings were not independently verified.
 
 ## Approach and current state
 
@@ -216,7 +217,7 @@ enable_comments: true
 
 On an article that accepts comments, an authenticated reader selects **Sign out** next to the
 session name. The button shows **Signing out…** and disables comment submission while the request
-is pending. The frontend sends `POST /api/auth/sign-out` with the browser's same-origin cookies.
+is pending. The frontend sends `POST /api/auth/sign-out` with an empty JSON object and the browser's same-origin cookies.
 
 On success, Better Auth deletes the current SQLite session and expires its cookies. The page stays
 on the article, clears the unsent draft, confirms **Signed out.** and shows the configured login
@@ -256,8 +257,11 @@ node --import tsx --test scripts/logout.test.ts scripts/comment-logout.test.ts
 - [x] Add a development-only panel route through the loopback proxy at `/admin/`.
 - [x] Test authentication failures, authenticated approve/delete actions, plain-text rendering,
       invalid/missing records and panel logout using the actual routes/script with isolated SQLite.
-- [ ] Verify the deployed panel from another LAN client with certificate verification enabled,
-      anonymous denial and authenticated list access, without exposing private comment data.
+- [x] Verify deployed HTTPS/IP certificates, anonymous denial and authenticated filters/stats from
+      motherbase itself. Caddy uses an explicit default SNI for clients connecting by IP.
+- [ ] Activate the firewall rule on motherbase and repeat those checks from another LAN client.
+      The listener is running, but the existing host firewall drops incoming TCP 3443. Root activation
+      is pending because `sudo -n` requires a password. No full Nix switch was executed.
 - [ ] Trust the exported public CA certificate on each intended device; do not export its private key.
 - [ ] Complete browser keyboard/mobile QA and a clearly identified real comment approval/delete cycle.
 
@@ -265,6 +269,19 @@ Panel: `https://192.168.5.153:3443/`. Access key: `COMMENTS_ADMIN_TOKEN` in the 
 See [README: private LAN moderation](README.md#private-lan-moderation) for certificate retrieval and
 SSH commands. Deleting a comment changes its status to `deleted`; it does not physically erase the
 SQLite record. The panel shows the latest 100 comments for the selected status.
+
+The permanent firewall rule is declared in `nix-systems`,
+`modules/hosts/linux/x86_64/motherbase.nix`, for interface `enp2s0`, source `192.168.4.0/22`,
+destination `192.168.5.153` and TCP 3443. That subnet was read from the active host interface.
+Until the Nix configuration is applied, activate the matching runtime rule **on motherbase**:
+
+```sh
+sudo iptables -C nixos-fw -i enp2s0 -s 192.168.4.0/22 -d 192.168.5.153 -p tcp --dport 3443 -j nixos-fw-accept \
+  || sudo iptables -I nixos-fw 1 -i enp2s0 -s 192.168.4.0/22 -d 192.168.5.153 -p tcp --dport 3443 -j nixos-fw-accept
+```
+
+This runtime activation is temporary: a firewall restart/reconfiguration removes it until the
+published Nix declaration is applied. Do not disable the firewall or open the port to all sources.
 
 ## Verified progress — 2026-11-12
 

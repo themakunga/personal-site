@@ -20,9 +20,9 @@ test('comment logout waits for success, clears the draft and preserves a failed 
   )
   let succeed = () => {}
   let fail = (_error: Error) => {}
-  const requests: { url: string; method: string }[] = []
-  const fetch = (url: string, options: { method: string }) => {
-    requests.push({ url, method: options.method })
+  const requests: { url: string; method: string; body: unknown }[] = []
+  const fetch = (url: string, options: { method: string; body: unknown }) => {
+    requests.push({ url, method: options.method, body: options.body })
     return new Promise((resolve, reject) => {
       succeed = () => resolve({ success: true })
       fail = reject
@@ -53,7 +53,7 @@ test('comment logout waits for success, clears the draft and preserves a failed 
   assert.equal(state.user.value.name, 'Logout Fixture')
   assert.equal(state.formError.value, '')
   await state.signOut()
-  assert.deepEqual(requests, [{ url: '/api/auth/sign-out', method: 'POST' }])
+  assert.deepEqual(requests, [{ url: '/api/auth/sign-out', method: 'POST', body: {} }])
   succeed()
   await pending
   assert.equal(state.user.value, null)

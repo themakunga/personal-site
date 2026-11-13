@@ -134,7 +134,7 @@ async function signOut() {
   signingOut.value = true
   formError.value = ''
   try {
-    await $fetch('/api/auth/sign-out', { method: 'POST' })
+    await $fetch('/api/auth/sign-out', { method: 'POST', body: {} })
     user.value = null
     draft.value = ''
     notice.value = 'Signed out.'

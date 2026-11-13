@@ -249,6 +249,8 @@ an administrator approve, hide or delete them. Delete is a reversible status cha
 SQLite record. The key stays only in tab memory and is cleared on sign-out or reload.
 
 Caddy uses its internal CA for this private IP and persists it in `personal-site-prod_caddy_data`.
+The host firewall must also allow TCP 3443 from the LAN; the scoped declaration and activation
+command are documented in [the checklist](COMMENTS_SETUP.md#10-lan-moderation-panel).
 Each client must trust that CA before normal HTTPS access. Retrieve **only the public certificate**
 through SSH (never export `root.key`):
 
