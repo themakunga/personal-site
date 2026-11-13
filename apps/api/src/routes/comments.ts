@@ -17,6 +17,7 @@ type Comment = {
   created_at: number
   updated_at: number | null
   user_name: string
+  provider_id: string | null
 }
 
 const app = new Hono()
@@ -96,10 +97,12 @@ app.post('/:slug', async (c) => {
     .digest('hex')
     .slice(0, 16)
 
+  const providerId = session.session.loginProvider ?? null
+
   db.prepare(
-    `INSERT INTO comments (id, post_slug, user_id, parent_id, body_markdown, status, created_at)
-     VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
-  ).run(id, slug, session.user.id, parent_id ?? null, body_markdown.trim(), Date.now())
+    `INSERT INTO comments (id, post_slug, user_id, parent_id, body_markdown, status, created_at, provider_id)
+     VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)`,
+  ).run(id, slug, session.user.id, parent_id ?? null, body_markdown.trim(), Date.now(), providerId)
 
   return c.json({ id }, 201)
 })

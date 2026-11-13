@@ -31,6 +31,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS session (
     id TEXT PRIMARY KEY,
+    "loginProvider" TEXT,
     "expiresAt" INTEGER NOT NULL,
     token TEXT NOT NULL UNIQUE,
     "createdAt" INTEGER NOT NULL,
@@ -67,6 +68,7 @@ db.exec(`
 
   CREATE TABLE IF NOT EXISTS comments (
     id TEXT PRIMARY KEY,
+    provider_id TEXT,
     post_slug TEXT NOT NULL,
     user_id TEXT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     parent_id TEXT REFERENCES comments(id),
@@ -79,3 +81,12 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_comments_post ON comments(post_slug, status);
   CREATE INDEX IF NOT EXISTS idx_comments_user ON comments(user_id);
 `)
+
+// Preserve existing databases while adding provider metadata without guessing historical logins.
+const hasColumn = db.prepare('SELECT 1 FROM pragma_table_info(?) WHERE name = ?')
+for (const [table, column] of [
+  ['session', 'loginProvider'],
+  ['comments', 'provider_id'],
+]) {
+  if (!hasColumn.get(table, column)) db.exec(`ALTER TABLE "${table}" ADD COLUMN "${column}" TEXT`)
+}

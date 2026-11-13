@@ -60,8 +60,9 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
     'INSERT INTO "user" (id, name, email, "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?)',
   ).run('fixture-user', 'Fixture User', 'fixture@example.com', now, now)
   let signedIn = true
+  let loginProvider: string | null = 'github'
   t.mock.method(auth.api, 'getSession', async () =>
-    signedIn ? { user: { id: 'fixture-user' } } : null,
+    signedIn ? { user: { id: 'fixture-user' }, session: { loginProvider } } : null,
   )
   let unavailable = false
   const policy = {
@@ -86,7 +87,7 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
       headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip },
       body: JSON.stringify(body),
     })
-  const valid = { body_markdown: 'A fixture comment.', altcha }
+  const valid = { body_markdown: 'A fixture comment.', altcha, provider_id: 'linkedin' }
   signedIn = false
   assert.equal((await submit('enabled', valid)).status, 401)
   signedIn = true
@@ -138,6 +139,7 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
     status: 'pending',
     created_at: saved.created_at,
     updated_at: null,
+    provider_id: 'github',
   })
   assert.deepEqual(await (await comments.request('/enabled')).json(), { comments: [] })
   const pending = await (await admin.request('/comments', { headers: adminHeaders })).json()
@@ -152,6 +154,11 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
   const visible = (await (await comments.request('/enabled')).json()).comments
   assert.equal(visible.length, 1)
   assert.equal(visible[0].user_name, 'Fixture User')
+  assert.equal(
+    visible[0].provider_id,
+    'github',
+    'Provider must come from the session, not the request body',
+  )
   policy.enabled.show_comments = false
   policy.enabled.enable_comments = false
   assert.deepEqual(await (await comments.request('/enabled')).json(), { comments: [] })
@@ -174,4 +181,12 @@ test('enforces article policy, validation, CAPTCHA and pending-first moderation'
   for (let index = 0; index < 5; index++)
     assert.equal((await submit('enabled', {}, 'rate-limit-fixture')).status, 400)
   assert.equal((await submit('enabled', {}, 'rate-limit-fixture')).status, 429)
+  loginProvider = null
+  const legacy = await submit('writeonly', valid)
+  assert.equal(legacy.status, 201)
+  assert.equal(
+    db.prepare('SELECT provider_id FROM comments WHERE id = ?').get((await legacy.json()).id)
+      .provider_id,
+    null,
+  )
 })

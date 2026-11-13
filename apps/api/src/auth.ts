@@ -27,6 +27,27 @@ export const auth = betterAuth({
   socialProviders,
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
+    additionalFields: {
+      loginProvider: { type: 'string', required: false, input: false },
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session, context) => {
+          const provider = context?.path.startsWith('/callback/') ? context.params?.id : null
+          return {
+            data: {
+              ...session,
+              loginProvider:
+                typeof provider === 'string' && enabledProviders.includes(provider)
+                  ? provider
+                  : null,
+            },
+          }
+        },
+      },
+    },
   },
 })
 

@@ -25,6 +25,17 @@ test('registers only social providers with complete credentials', (t) => {
     },
     { credentials: { GITHUB_CLIENT_ID: 'incomplete' }, expected: [] },
     { credentials: { LINKEDIN_CLIENT_ID: 'incomplete' }, expected: [] },
+    {
+      credentials: {
+        GITHUB_CLIENT_ID: 'test-github',
+        GITHUB_CLIENT_SECRET: 'test-secret',
+        GOOGLE_CLIENT_ID: 'test-google',
+        GOOGLE_CLIENT_SECRET: 'test-secret',
+        LINKEDIN_CLIENT_ID: 'test-linkedin',
+        LINKEDIN_CLIENT_SECRET: 'test-secret',
+      },
+      expected: ['github', 'google', 'linkedin'],
+    },
   ].entries()) {
     const result = spawnSync(
       process.execPath,
@@ -36,8 +47,15 @@ test('registers only social providers with complete credentials', (t) => {
         `
           import assert from 'node:assert/strict';
           const { auth } = await import(${JSON.stringify(moduleUrl)});
+          const context = await auth.$context;
           const providers = Object.keys(auth.options.socialProviders || {});
           for (const provider of providers) {
+            const configured = context.socialProviders.find(value => value.id === provider);
+            configured.validateAuthorizationCode = async () => ({ accessToken: 'fixture-access-token' });
+            configured.getUserInfo = async () => ({
+              user: { id: 'fixture-' + provider, name: 'Provider Fixture', email: 'provider@example.com', emailVerified: true },
+              data: { id: 'fixture-' + provider, sub: 'fixture-' + provider },
+            });
             const response = await auth.handler(new Request('http://localhost:3000/api/auth/sign-in/social', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3100' },
@@ -56,6 +74,26 @@ test('registers only social providers with complete credentials', (t) => {
               }
             }
             assert.ok(response.headers.get('set-cookie'));
+            const callback = new URL('http://localhost:3000/api/auth/callback/' + provider);
+            callback.searchParams.set('code', 'fixture-code');
+            callback.searchParams.set('state', url.searchParams.get('state'));
+            const completed = await auth.handler(new Request(callback, {
+              headers: { Cookie: response.headers.getSetCookie().map(value => value.split(';')[0]).join('; ') },
+            }));
+            assert.equal(completed.status, 302);
+            assert.equal(completed.headers.get('location'), 'http://localhost:3100/blog/fixture');
+            const session = await auth.api.getSession({ headers: new Headers({
+              Cookie: completed.headers.getSetCookie().map(value => value.split(';')[0]).join('; '),
+            }) });
+            assert.equal(session.session.loginProvider, provider);
+            const tampered = await auth.handler(new Request('http://localhost:3000/api/auth/update-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Origin: 'http://localhost:3100', Cookie: completed.headers.getSetCookie().map(value => value.split(';')[0]).join('; ') },
+              body: JSON.stringify({ loginProvider: 'forged-provider' }),
+            }));
+            assert.ok(tampered.status >= 400);
+            const unchanged = await auth.api.getSession({ headers: new Headers({ Cookie: completed.headers.getSetCookie().map(value => value.split(';')[0]).join('; ') }) });
+            assert.equal(unchanged.session.loginProvider, provider);
           }
           console.log(JSON.stringify(providers));
         `,

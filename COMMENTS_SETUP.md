@@ -215,6 +215,12 @@ enable_comments: true
 
 ## 9. Logout flow
 
+The public comment form groups sign-in buttons horizontally, with GitHub/Google/LinkedIn icons.
+The logout control is an outlined button with an icon and visible keyboard focus. Author icons use
+the provider captured server-side from the successful OAuth callback and stored with each comment.
+Historical comments/sessions without recorded provider metadata use a neutral account icon; sign
+in again to record the provider for future comments. The compatible migration preserves old rows.
+
 On an article that accepts comments, an authenticated reader selects **Sign out** next to the
 session name. The button shows **Signing out…** and disables comment submission while the request
 is pending. The frontend sends `POST /api/auth/sign-out` with an empty JSON object and the browser's same-origin cookies.

@@ -9,6 +9,13 @@
       <ul v-else class="comments__list">
         <li v-for="c in comments" :key="c.id" class="comment">
           <header class="comment__meta">
+            <span
+              class="provider-icon"
+              :style="providerStyle(c.provider_id)"
+              role="img"
+              :aria-label="providerLabel(c.provider_id)"
+              :title="providerLabel(c.provider_id)"
+            />
             <strong>{{ c.user_name }}</strong>
             <time :datetime="new Date(c.created_at).toISOString()">{{ fmt(c.created_at) }}</time>
           </header>
@@ -20,14 +27,19 @@
 
     <div v-if="enable" class="comments__form">
       <template v-if="user">
-        <p class="comments__muted">
+        <p class="comments__session">
           Sesión: {{ user.name }} ·
           <button
-            class="link"
+            class="btn btn--logout"
             :disabled="signingOut || sending"
             :aria-busy="signingOut"
             @click="signOut"
           >
+            <span
+              class="provider-icon"
+              style="--icon: url('/icons/mdi/mdi-logout.svg')"
+              aria-hidden="true"
+            />
             {{ signingOut ? 'Signing out…' : 'Sign out' }}
           </button>
         </p>
@@ -44,15 +56,20 @@
       </template>
       <template v-else>
         <p class="comments__muted">Inicia sesión para comentar:</p>
-        <button v-if="providers.includes('github')" class="btn" @click="signIn('github')">
-          GitHub
-        </button>
-        <button v-if="providers.includes('google')" class="btn" @click="signIn('google')">
-          Google
-        </button>
-        <button v-if="providers.includes('linkedin')" class="btn" @click="signIn('linkedin')">
-          LinkedIn
-        </button>
+        <div class="comments__providers" role="group" aria-label="Sign in to comment">
+          <button v-if="providers.includes('github')" class="btn" @click="signIn('github')">
+            <span class="provider-icon" :style="providerStyle('github')" aria-hidden="true" />
+            GitHub
+          </button>
+          <button v-if="providers.includes('google')" class="btn" @click="signIn('google')">
+            <span class="provider-icon" :style="providerStyle('google')" aria-hidden="true" />
+            Google
+          </button>
+          <button v-if="providers.includes('linkedin')" class="btn" @click="signIn('linkedin')">
+            <span class="provider-icon" :style="providerStyle('linkedin')" aria-hidden="true" />
+            LinkedIn
+          </button>
+        </div>
       </template>
       <p v-if="notice" class="comments__notice">{{ notice }}</p>
       <p v-if="formError" class="comments__error">{{ formError }}</p>
@@ -61,7 +78,13 @@
 </template>
 
 <script setup lang="ts">
-type ApiComment = { id: string; user_name: string; body_markdown: string; created_at: number }
+type ApiComment = {
+  id: string
+  user_name: string
+  body_markdown: string
+  created_at: number
+  provider_id: string | null
+}
 type Challenge = {
   algorithm: string
   challenge: string
@@ -82,6 +105,21 @@ const sending = ref(false)
 const signingOut = ref(false)
 const notice = ref('')
 const formError = ref('')
+
+const providerNames: Record<string, string> = {
+  github: 'GitHub',
+  google: 'Google',
+  linkedin: 'LinkedIn',
+}
+const knownProvider = (provider: string | null | undefined) =>
+  Object.hasOwn(providerNames, provider ?? '')
+const providerStyle = (provider: string | null | undefined) => ({
+  '--icon': `url(/icons/mdi/mdi-${knownProvider(provider) ? provider : 'account'}.svg)`,
+})
+const providerLabel = (provider: string | null | undefined) =>
+  knownProvider(provider)
+    ? `Signed in with ${providerNames[provider ?? '']}`
+    : 'Login provider unavailable'
 
 // The slug contains "/" (e.g. 2026/hello-world), so it must be encoded as one path segment.
 const commentsUrl = computed(() => `/api/comments/${encodeURIComponent(props.slug)}`)
@@ -239,12 +277,17 @@ onMounted(() => {
 }
 .comment__meta {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.75rem;
   color: var(--comment);
   font-size: 0.8rem;
 }
 .comment__meta strong {
   color: var(--cyan);
+}
+.comment__meta .provider-icon {
+  color: var(--blue);
 }
 .comment__body {
   margin: 0.5rem 0 0;
@@ -257,6 +300,27 @@ onMounted(() => {
   gap: 0.5rem;
   justify-items: start;
 }
+.comments__providers,
+.comments__session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+.comments__session {
+  margin: 0;
+  color: var(--comment);
+  font-size: 0.85rem;
+}
+.provider-icon {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
 .comments__form textarea {
   width: 100%;
   background: var(--bg-dark);
@@ -267,6 +331,10 @@ onMounted(() => {
   font: inherit;
 }
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
   background: var(--bg-highlight);
   color: var(--fg);
   border: 1px solid var(--blue);
@@ -275,16 +343,24 @@ onMounted(() => {
   cursor: pointer;
   font: inherit;
 }
+.btn:hover:not(:disabled),
+.btn:focus-visible {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-.link {
-  background: none;
-  border: 0;
+.btn--logout {
+  background: var(--bg-dark);
+  border-color: var(--purple);
+  border-width: 2px;
   color: var(--purple);
-  cursor: pointer;
-  font: inherit;
-  text-decoration: underline;
+  font-weight: 600;
 }
 </style>

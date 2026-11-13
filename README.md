@@ -241,6 +241,13 @@ current site session and clears the unsent draft; a failed request preserves bot
 Session cookie caching is disabled for immediate revocation. Other devices/provider accounts remain
 signed in. See the checklist's logout section for the acceptance steps.
 
+Social sign-in buttons share a horizontal, wrapping row with the site's MDI provider icons.
+The outlined logout button has a distinct border, icon and visible keyboard focus. Each comment
+shows the provider captured from its verified login session when submitted. It cannot be selected
+by the comment request body. SQLite adds nullable session/comment provider columns in place;
+existing records are preserved and display a neutral account icon when their provider is unknown.
+Sessions created before this change also remain unknown until the reader signs in again.
+
 ### Private LAN moderation
 
 Open **https://motherbase.local:3443/** from the local network; the IP URL
