@@ -43,7 +43,7 @@ def read_article(path: Path) -> tuple[str | None, str]:
 
 def markdown_to_text(markdown: str) -> str:
     text = re.sub(r"```.*?```|~~~.*?~~~", " ", markdown, flags=re.DOTALL)
-    text = re.sub(r"!\[[^]]*]\([^)]*\)", " ", text)
+    text = re.sub(r"!\[\[[^]\n]+\]\]|!\[[^]]*]\([^)]*\)", " ", text)
     text = re.sub(r"\[([^]]+)]\([^)]*\)", r"\1", text)
     text = re.sub(r"`[^`]*`", " ", text)
     text = re.sub(r"<[^>]+>", " ", text)

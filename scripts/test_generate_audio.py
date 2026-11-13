@@ -11,6 +11,12 @@ from generate_audio import generate, markdown_to_text, read_article, synthesize
 
 
 class GenerateAudioTest(unittest.TestCase):
+    def test_omits_obsidian_image_embeds_and_sizes(self) -> None:
+        self.assertEqual(
+            markdown_to_text("Before ![[assets/photo.png|300]] ![[Pasted image.png]] after."),
+            "Before after.",
+        )
+
     def test_reads_supported_language_and_cleans_markdown(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             article = Path(directory) / "article.md"
