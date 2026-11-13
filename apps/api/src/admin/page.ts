@@ -4,17 +4,41 @@ export const adminPage = `<!doctype html>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Comment moderation</title>
   <style>
-    :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; }
-    body { max-width: 850px; margin: 2rem auto; padding: 0 1rem; }
-    input, select, button { font: inherit; padding: .5rem; margin: .25rem; }
-    input { max-width: 100%; box-sizing: border-box; }
-    article { border: 1px solid #777; border-radius: .4rem; padding: 1rem; margin: 1rem 0; }
+    :root {
+      color-scheme: dark;
+      font: 15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --bg: #24283b; --panel: #1f2335; --border: #414868; --fg: #c0caf5;
+      --muted: #a9b1d6; --blue: #7aa2f7; --green: #9ece6a; --purple: #bb9af7;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: clamp(.75rem, 3vw, 2.5rem); background: var(--bg); color: var(--fg); }
+    .terminal { max-width: 960px; margin: auto; border: 1px solid var(--border); background: var(--panel); border-radius: .5rem; overflow: hidden; box-shadow: 0 1rem 3rem #0003; }
+    .terminal-bar { padding: .65rem 1.25rem; background: var(--bg); border-bottom: 1px solid var(--border); color: var(--muted); font-size: .85rem; overflow-wrap: anywhere; }
+    .terminal-bar::before { content: '● ● ●'; color: var(--purple); margin-right: 1rem; }
+    main { padding: clamp(1rem, 3vw, 2rem); }
+    h1 { margin: 0 0 1.5rem; color: var(--green); font-size: clamp(1.1rem, 3vw, 1.5rem); }
+    h1::before { content: '$ '; color: var(--blue); }
+    h2 { color: var(--purple); font-size: 1rem; margin-top: 0; }
+    label { display: inline-block; color: var(--blue); }
+    input, select, button { font: inherit; padding: .6rem .8rem; margin: .25rem 0; border: 1px solid var(--border); border-radius: .2rem; background: var(--bg); color: var(--fg); }
+    input { display: block; width: 100%; max-width: 36rem; }
+    button { cursor: pointer; color: var(--green); margin-right: .5rem; }
+    button:hover:not(:disabled) { border-color: var(--green); background: #292e42; }
+    button:disabled, select:disabled { opacity: .6; cursor: default; }
+    :focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+    article { border-left: 2px solid var(--blue); padding: 1rem; margin: 1rem 0; background: var(--bg); }
     article p { white-space: pre-wrap; overflow-wrap: anywhere; }
-    .muted { color: #bbb; } #message { min-height: 1.5rem; } [hidden] { display: none; }
+    .muted { color: var(--muted); font-size: .85rem; }
+    #message { min-height: 1.5rem; color: #e0af68; overflow-wrap: anywhere; }
+    [hidden] { display: none; }
+    ::selection { background: #3b4261; color: var(--fg); }
   </style>
   <script src="./admin.js" defer></script>
 </head>
 <body>
+  <div class="terminal">
+  <header class="terminal-bar">comments-admin — moderation</header>
+  <main>
   <h1>Comment moderation</h1>
   <form id="login">
     <label for="token">Admin access key</label>
@@ -35,6 +59,8 @@ export const adminPage = `<!doctype html>
     <div id="comments"></div>
   </section>
   <p id="message" role="status" aria-live="polite"></p>
+  </main>
+  </div>
 </body>
 </html>`
 
