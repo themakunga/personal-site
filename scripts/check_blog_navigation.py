@@ -14,6 +14,8 @@ class Page(HTMLParser):
         self.payload = None
         self.read_payload = False
         self.in_navigation = False
+        self.seen_post_body = False
+        self.navigation_before_body = []
         self.neighbors = {}
         self.rss = None
         self.feed_link = False
@@ -22,8 +24,11 @@ class Page(HTMLParser):
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         self.read_payload = tag == "script" and attrs.get("id") == "__NUXT_DATA__"
+        if "post__body" in attrs.get("class", "").split():
+            self.seen_post_body = True
         if tag == "nav" and attrs.get("aria-label") == "Post navigation":
             self.in_navigation = True
+            self.navigation_before_body.append(not self.seen_post_body)
         if tag == "a":
             if self.in_navigation:
                 for rel in attrs.get("rel", "").split():
@@ -77,6 +82,9 @@ def check_site(base):
         if index > 0:
             expected["next"] = paths[index - 1]
         assert page.neighbors == expected, (path, page.neighbors, expected)
+        assert page.navigation_before_body == ([True, False] if expected else []), (
+            f"Expected adjacent-post navigation before and after the article: {path}"
+        )
         assert page.rss and urlparse(page.rss).path == "/rss.xml"
         assert page.feed_link, "Missing visible RSS link"
         check_page(base, path + "?reload-check=1")

@@ -14,28 +14,11 @@
       </audio>
     </header>
 
+    <PostNavigation :previous="surroundings[0]" :next="surroundings[1]" />
+
     <PostBody :value="post" class="post__body" />
 
-    <nav v-if="surroundings?.some(Boolean)" class="post__navigation" aria-label="Post navigation">
-      <NuxtLink
-        v-if="surroundings?.[0]"
-        :to="surroundings[0].path.replace(/^\/post/, '/blog')"
-        rel="prev"
-        class="post__previous"
-      >
-        <span>← Previous post</span>
-        {{ surroundings[0].title }}
-      </NuxtLink>
-      <NuxtLink
-        v-if="surroundings?.[1]"
-        :to="surroundings[1].path.replace(/^\/post/, '/blog')"
-        rel="next"
-        class="post__next"
-      >
-        <span>Next post →</span>
-        {{ surroundings[1].title }}
-      </NuxtLink>
-    </nav>
+    <PostNavigation :previous="surroundings[0]" :next="surroundings[1]" />
 
     <PostComments
       v-if="post.show_comments || post.enable_comments"
@@ -133,42 +116,6 @@ useSeoMeta({
 .post__audio {
   width: 100%;
   margin-top: 1rem;
-}
-
-.post__navigation {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--bg-highlight);
-}
-
-.post__navigation a {
-  color: var(--blue);
-  overflow-wrap: anywhere;
-}
-
-.post__navigation span {
-  display: block;
-  color: var(--fg-muted);
-  font-size: 0.8rem;
-  margin-bottom: 0.5rem;
-}
-
-.post__next {
-  grid-column: 2;
-  text-align: right;
-}
-
-@media (max-width: 600px) {
-  .post__navigation {
-    grid-template-columns: 1fr;
-  }
-
-  .post__next {
-    grid-column: 1;
-  }
 }
 
 .tag {
