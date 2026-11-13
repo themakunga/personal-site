@@ -36,8 +36,12 @@
       </template>
       <template v-else>
         <p class="comments__muted">Inicia sesión para comentar:</p>
-        <button class="btn" @click="signIn('github')">GitHub</button>
-        <button class="btn" @click="signIn('google')">Google</button>
+        <button v-if="providers.includes('github')" class="btn" @click="signIn('github')">
+          GitHub
+        </button>
+        <button v-if="providers.includes('google')" class="btn" @click="signIn('google')">
+          Google
+        </button>
       </template>
       <p v-if="notice" class="comments__notice">{{ notice }}</p>
       <p v-if="formError" class="comments__error">{{ formError }}</p>
@@ -61,6 +65,7 @@ const comments = ref<ApiComment[]>([])
 const loading = ref(false)
 const loadError = ref(false)
 const user = ref<{ name: string } | null>(null)
+const providers = ref<string[]>([])
 const draft = ref('')
 const sending = ref(false)
 const notice = ref('')
@@ -88,6 +93,14 @@ async function loadSession() {
     user.value = s?.user ?? null
   } catch {
     user.value = null
+  }
+}
+
+async function loadProviders() {
+  try {
+    providers.value = (await $fetch<{ providers: string[] }>('/api/auth/providers')).providers
+  } catch {
+    formError.value = 'Sign-in is temporarily unavailable.'
   }
 }
 
@@ -160,7 +173,10 @@ async function send() {
 // Client-only: the site is statically generated, comments are fetched at runtime.
 onMounted(() => {
   if (props.show) load()
-  if (props.enable) loadSession()
+  if (props.enable) {
+    loadSession()
+    loadProviders()
+  }
 })
 </script>
 

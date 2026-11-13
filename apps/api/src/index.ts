@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
-import { auth } from './auth.ts'
+import { auth, enabledProviders } from './auth.ts'
 import commentsRouter from './routes/comments.ts'
 import captchaRouter from './routes/captcha.ts'
 import adminApp from './admin/index.ts'
@@ -20,6 +20,7 @@ app.use(
 )
 
 // Auth routes (Better Auth handles all /api/auth/*)
+app.get('/api/auth/providers', (c) => c.json({ providers: enabledProviders }))
 app.on(['GET', 'POST'], '/api/auth/*', (c) => auth.handler(c.req.raw))
 
 // Public API

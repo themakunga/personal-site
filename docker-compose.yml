@@ -25,10 +25,13 @@ services:
     image: ghcr.io/themakunga/personal-site-comments-api:${SITE_IMAGE_TAG:?Set SITE_IMAGE_TAG to a published sha tag}
     networks:
       - backend
+      - edge
     volumes:
       - sqlite_data:/data
     environment:
       - DATA_DIR=/data
+      - NODE_ENV=production
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:?Set a persistent random Better Auth secret}
       - PUBLIC_URL=${PUBLIC_URL}
       - TRUSTED_ORIGINS=${TRUSTED_ORIGINS}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}

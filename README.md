@@ -242,13 +242,14 @@ curl -X PATCH localhost:3001/comments/<id> \
 
 ### Required environment (`.env` on the host)
 
-| Variable                                   | Where to get it                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------------- |
-| `PUBLIC_URL`, `TRUSTED_ORIGINS`            | Your public origin, e.g. `https://nicolasvillarroel.cl` (no trailing `/`) |
-| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth App (below)                                                  |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client (below)                                         |
-| `ALTCHA_HMAC_KEY`                          | Any random secret: `openssl rand -hex 32`                                 |
-| `CLOUDFLARE_TUNNEL_TOKEN`                  | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure      |
+| Variable                                   | Where to get it                                                              |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `PUBLIC_URL`, `TRUSTED_ORIGINS`            | Your public origin, e.g. `https://nicolasvillarroel.cl` (no trailing `/`)    |
+| `BETTER_AUTH_SECRET`                       | Generate once with `openssl rand -base64 48`; keep it stable across restarts |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | GitHub OAuth App (below)                                                     |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud OAuth client (below)                                            |
+| `ALTCHA_HMAC_KEY`                          | Any random secret: `openssl rand -hex 32`                                    |
+| `CLOUDFLARE_TUNNEL_TOKEN`                  | Cloudflare Zero Trust → Networks → Tunnels → your tunnel → Configure         |
 
 **GitHub** — https://github.com/settings/developers → _New OAuth App_.
 Homepage URL: `https://nicolasvillarroel.cl`.
@@ -261,8 +262,12 @@ your email; the `openid email profile` scopes are enough).
 Authorized JavaScript origin: `https://nicolasvillarroel.cl`.
 Authorized redirect URI: `https://nicolasvillarroel.cl/api/auth/callback/google`.
 
-One provider is enough: with empty credentials for the other, its login button just fails. After
-editing `.env`, run `make prod` on the host (the API reads the variables at start).
+One provider is enough. Only providers with both credentials are registered and shown in the
+comment form; `/api/auth/providers` exposes provider names without credentials. Production requires
+a persistent `BETTER_AUTH_SECRET` and the API joins the outbound-capable edge network for OAuth
+token exchange. Keep the host `.env` private. After editing it, run `make prod` on the host so the
+API receives the updated environment. A successful redirect still requires completing Google's
+consent flow and configuring the exact callback in its developer console.
 
 ## Homepage
 
