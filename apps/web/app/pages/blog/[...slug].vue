@@ -14,8 +14,6 @@
       </audio>
     </header>
 
-    <PostNavigation :previous="surroundings[0]" :next="surroundings[1]" />
-
     <PostBody :value="post" class="post__body" />
 
     <PostNavigation :previous="surroundings[0]" :next="surroundings[1]" />

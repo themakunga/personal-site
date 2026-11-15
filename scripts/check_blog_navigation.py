@@ -82,8 +82,8 @@ def check_site(base):
         if index > 0:
             expected["next"] = paths[index - 1]
         assert page.neighbors == expected, (path, page.neighbors, expected)
-        assert page.navigation_before_body == ([True, False] if expected else []), (
-            f"Expected adjacent-post navigation before and after the article: {path}"
+        assert page.navigation_before_body == ([False] if expected else []), (
+            f"Expected adjacent-post navigation only after the article: {path}"
         )
         assert page.rss and urlparse(page.rss).path == "/rss.xml"
         assert page.feed_link, "Missing visible RSS link"
