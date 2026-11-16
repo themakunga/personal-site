@@ -11,8 +11,8 @@ export default defineNuxtConfig({
         {
           // An unreachable analytics host must not block Nuxt hydration.
           async: true,
-          src: 'http://motherbase.local:8989/script.js',
-          'data-website-id': '28c91ed6-572c-4cd6-bd9e-0461ee902a35',
+          src: 'https://analytics.nicolasvillarroel.cl/script.js',
+          'data-website-id': 'b840081c-9895-430a-975c-dc66c069ec20',
         },
       ],
     },
