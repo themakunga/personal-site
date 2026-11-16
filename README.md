@@ -353,3 +353,8 @@ production build output. `CONTENT_DIR` can select the source content repository.
 Fenced `mermaid` blocks render as diagrams in blog and portfolio Markdown. Mermaid loads only
 when a diagram is mounted and uses strict SVG sanitization. The source remains readable during
 loading, when JavaScript is disabled or if rendering fails. Other code blocks keep their highlighting.
+
+Diagrams use the site's Tokyo Night Storm palette for nodes, labels, arrows and groups.
+Code blocks use Shiki's Tokyo Night syntax colors on the Storm background, with a visible
+language header (`text` for fences without a language). The Lua, Vim and Nix grammars used
+by the portfolio are included alongside the standard web languages.

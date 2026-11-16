@@ -4,6 +4,32 @@ export default defineNuxtConfig({
   telemetry: false,
   devtools: { enabled: true },
   modules: ['@nuxt/content', '@nuxt/eslint'],
+  content: {
+    build: {
+      markdown: {
+        highlight: {
+          theme: 'tokyo-night',
+          langs: [
+            'bash',
+            'css',
+            'html',
+            'javascript',
+            'json',
+            'jsx',
+            'lua',
+            'markdown',
+            'mdc',
+            'nix',
+            'tsx',
+            'typescript',
+            'viml',
+            'vue',
+            'yaml',
+          ],
+        },
+      },
+    },
+  },
   app: {
     head: {
       link: [{ rel: 'icon', type: 'image/x-icon', href: '/blog-icon.ico' }],
