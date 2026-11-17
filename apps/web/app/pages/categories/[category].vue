@@ -31,6 +31,7 @@ const { data: posts } = await useAsyncData(
       .where('draft', '=', false)
       .where('category', '=', category.value)
       .order('updated_at', 'DESC')
+      .order('path', 'DESC')
       .all(),
 )
 

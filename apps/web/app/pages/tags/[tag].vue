@@ -30,6 +30,7 @@ const { data: posts } = await useAsyncData(
     const all = await queryCollection('post')
       .where('draft', '=', false)
       .order('updated_at', 'DESC')
+      .order('path', 'DESC')
       .all()
     return all.filter((p) => p.tags?.includes(tag.value))
   },

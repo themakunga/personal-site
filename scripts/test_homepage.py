@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 from html.parser import HTMLParser
+import re
+from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 
 from check_blog_navigation import Page
@@ -71,6 +73,7 @@ def main():
                 "updated_at": "2026-11-11T12:30:00Z" if index == 0 else f"2026-11-11T{12 if index == 11 else index:02}:00:00Z",
                 "image": "/assets/hero.svg" if 5 <= index <= 11 or index == 13 else "  ",
                 "show_comments": index in (1, 3), "enable_comments": index in (2, 3),
+                "category": "sorting", "tags": ["sorting"],
             }
             body = "Example post.\n"
             if index == 0:
@@ -111,10 +114,23 @@ def main():
                 assert payload[payload[0]["path"]] == route, "Incorrect prerendered route"
                 all_posts.extend(home.posts["latest-posts"])
             assert all_posts == [path(0), *[path(i) for i in range(12, 0, -1)]]
+            for route in ("blog", "categories/sorting", "tags/sorting"):
+                page = Home((public / route / "index.html").read_text())
+                links = [link for link in page.links if link.startswith("/blog/")]
+                assert links == all_posts, (route, links, all_posts)
+            for index, post_path in enumerate(all_posts):
+                page = Page((public / post_path.lstrip("/") / "index.html").read_text())
+                expected = {}
+                if index + 1 < len(all_posts):
+                    expected["prev"] = all_posts[index + 1]
+                if index > 0:
+                    expected["next"] = all_posts[index - 1]
+                assert page.neighbors == expected, (post_path, page.neighbors, expected)
             assert not (public / "blog/post-13/index.html").exists(), "Draft was prerendered"
             feed = ET.parse(public / "rss.xml")
             items = feed.findall("channel/item")
             assert len(items) == 13, "Feed must include every published post and no drafts"
+            assert [urlparse(item.findtext("link")).path for item in items] == all_posts
             assert items[0].findtext("title") == "Post 00 & <RSS>"
             full_html = items[0].findtext("{http://purl.org/rss/1.0/modules/content/}encoded")
             assert full_html == items[0].findtext("description")
@@ -127,6 +143,7 @@ def main():
                 assert value in full_html, value
             reader = (public / "rss/index.html").read_text()
             assert reader.count('class="reader__post"') == 13
+            assert re.findall(r'<h2[^>]*>\s*<a[^>]*href="(/blog/[^\"]+)"', reader) == all_posts
             assert "Final RSS body marker." in reader
             assert 'href="https://example.com/blog/post-01"' in reader
             assert "Post 13" not in reader, "Draft content leaked into reading mode"
@@ -140,7 +157,7 @@ def main():
                 assert ('class="comments"' in html) == (index > 0)
                 assert ("Aún no hay comentarios." in html) == (index in (1, 3))
                 assert ('class="comments__form"' in html) == (index in (2, 3))
-            print("Homepage and RSS checks passed: featured, tiles, pagination, drafts, comment flags, full article bodies and reading links")
+            print("Post views share updated_at ordering and path tie-breaks: homepage, blog, categories, tags, neighbors and RSS; content/comment checks passed")
         finally:
             run(["--import", "tsx", "scripts/prepare-content.ts"], cwd=ROOT)
 

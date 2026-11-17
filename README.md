@@ -11,7 +11,8 @@ The site is available at http://localhost:8081. Changes to the web app reload au
 ## Post dates and images
 
 Home, blog, category and tag lists show posts from most recently updated to least recently
-updated using the frontmatter `updated_at`. The importer normalizes timestamps to UTC for
+updated using the frontmatter `updated_at`, with descending `path` as a stable tie-breaker.
+The same order applies to RSS and older/newer article neighbors. The importer normalizes timestamps to UTC for
 chronological sorting. If `updated_at` is absent, it uses `date`, which falls back to Obsidian's
 `created_at`. The displayed publication date still comes from `date`:
 
