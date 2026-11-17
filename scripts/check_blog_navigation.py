@@ -13,6 +13,8 @@ class Page(HTMLParser):
         super().__init__()
         self.payload = None
         self.read_payload = False
+        self.payload_source = None
+        self.payload_preloads = []
         self.in_navigation = False
         self.seen_post_body = False
         self.navigation_before_body = []
@@ -24,6 +26,10 @@ class Page(HTMLParser):
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         self.read_payload = tag == "script" and attrs.get("id") == "__NUXT_DATA__"
+        if self.read_payload:
+            self.payload_source = attrs.get("data-src")
+        if tag == "link" and attrs.get("rel") == "preload" and "_payload.json" in attrs.get("href", ""):
+            self.payload_preloads.append(attrs["href"])
         if "post__body" in attrs.get("class", "").split():
             self.seen_post_body = True
         if tag == "nav" and attrs.get("aria-label") == "Post navigation":
@@ -49,12 +55,23 @@ class Page(HTMLParser):
         if self.read_payload:
             self.payload = json.loads(data)
 
+    @property
+    def rendered_path(self):
+        root = self.payload[0]
+        if isinstance(root, list):
+            assert root[0] in ("Reactive", "ShallowReactive"), root[0]
+            root = self.payload[root[1]]
+        return self.payload[root["path"]]
+
 
 def check_page(base, path):
     with urlopen(urljoin(base, path), timeout=20) as response:
         page = Page(response.read().decode())
     assert page.payload is not None, f"Missing Nuxt payload for {path}"
-    rendered_path = page.payload[page.payload[0]["path"]]
+    assert page.payload_source is None and not page.payload_preloads, (
+        f"Initial data must be inline, without a separate payload preload: {path}"
+    )
+    rendered_path = page.rendered_path
     assert rendered_path == urlparse(path).path, (
         f"Reload renders {rendered_path!r} instead of {path!r}"
     )

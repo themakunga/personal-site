@@ -19,6 +19,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatPostDate } from '../../utils/post-date'
+
 const config = useAppConfig()
 
 const { data: posts } = await useAsyncData('blog-posts', () =>
@@ -30,7 +32,7 @@ const { data: posts } = await useAsyncData('blog-posts', () =>
 )
 
 const formatDate = (d: Date | string) =>
-  new Date(d).toLocaleDateString(config.site.language, {
+  formatPostDate(d, config.site.language, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

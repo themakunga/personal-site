@@ -33,6 +33,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatPostDate } from '../../utils/post-date'
+
 const config = useAppConfig()
 const route = useRoute()
 
@@ -73,7 +75,7 @@ const audioSrc = computed(
 )
 
 const formatDate = (d: Date | string) =>
-  new Date(d).toLocaleDateString(config.site.language, {
+  formatPostDate(d, config.site.language, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

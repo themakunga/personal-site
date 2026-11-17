@@ -110,8 +110,7 @@ def main():
                 assert home.current == [route + "#latest-posts"], home.current
                 assert all(f"/page/{page}#latest-posts" in home.links for page in (2, 3))
                 assert "/#latest-posts" in home.links
-                payload = Page(html).payload
-                assert payload[payload[0]["path"]] == route, "Incorrect prerendered route"
+                assert Page(html).rendered_path == route, "Incorrect prerendered route"
                 all_posts.extend(home.posts["latest-posts"])
             assert all_posts == [path(0), *[path(i) for i in range(12, 0, -1)]]
             for route in ("blog", "categories/sorting", "tags/sorting"):

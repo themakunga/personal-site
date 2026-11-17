@@ -23,6 +23,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatPostDate } from '../utils/post-date'
 import { absoluteContentUrls } from '../utils/content-urls'
 
 definePageMeta({ layout: false })
@@ -46,7 +47,7 @@ const readingPosts = computed(() =>
   })),
 )
 const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString(config.site.language, {
+  formatPostDate(date, config.site.language, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

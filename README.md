@@ -14,12 +14,16 @@ Home, blog, category and tag lists show posts from most recently updated to leas
 updated using the frontmatter `updated_at`, with descending `path` as a stable tie-breaker.
 The same order applies to RSS and older/newer article neighbors. The importer normalizes timestamps to UTC for
 chronological sorting. If `updated_at` is absent, it uses `date`, which falls back to Obsidian's
-`created_at`. The displayed publication date still comes from `date`:
+`created_at`. The displayed publication date still comes from `date` and uses UTC in every
+post view so visitors in other time zones see the same calendar day:
 
 ```yaml
 date: 2026-11-08
 updated_at: 2026-11-08T12:30:00-03:00
 ```
+
+Initial page data is included in the HTML to avoid a separate payload preload and fetch.
+Extracted `_payload.json` files remain available for client-side navigation.
 
 The home page features the latest entry with its frontmatter `image` and title, followed by
 the next five entries without repeating the featured post. Save the hero file in

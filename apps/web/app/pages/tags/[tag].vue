@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatPostDate } from '../../utils/post-date'
+
 const config = useAppConfig()
 const route = useRoute()
 const tag = computed(() => String(route.params.tag))
@@ -37,7 +39,7 @@ const { data: posts } = await useAsyncData(
 )
 
 const formatDate = (d: Date | string) =>
-  new Date(d).toLocaleDateString(config.site.language, {
+  formatPostDate(d, config.site.language, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

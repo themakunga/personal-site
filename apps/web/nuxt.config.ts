@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   telemetry: false,
   devtools: { enabled: true },
   modules: ['@nuxt/content', '@nuxt/eslint'],
+  experimental: {
+    // Inline initial data; keep extracted payloads for client-side navigation.
+    payloadExtraction: 'client',
+  },
   content: {
     build: {
       markdown: {

@@ -64,6 +64,8 @@
 </template>
 
 <script setup lang="ts">
+import { formatPostDate } from '../utils/post-date'
+
 const { page = 1 } = defineProps<{ page?: number }>()
 const config = useAppConfig()
 const pageSize = config.blog.postPerPage
@@ -89,7 +91,7 @@ if (page > totalPages.value) throw createError({ statusCode: 404, statusMessage:
 const pageUrl = (number: number) => `${number === 1 ? '/' : `/page/${number}`}#latest-posts`
 
 const formatDate = (d: Date | string) =>
-  new Date(d).toLocaleDateString(config.site.language, {
+  formatPostDate(d, config.site.language, {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
