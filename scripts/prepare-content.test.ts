@@ -23,6 +23,7 @@ test('prepares content before rendering and stops on a broken image', (t) => {
   for (const path of [
     'apps/web/app',
     'source/posts',
+    'source/posts/2026',
     'source/assets',
     'source/portfolio/example',
   ]) {
@@ -44,6 +45,8 @@ test('prepares content before rendering and stops on a broken image', (t) => {
     '---\ntitle: Example\nimage: /assets/photo.png\ncreated_at: 2026-11-08\n---\n![[photo.png|640]]\n![Photo](/assets/photo.png)\n'
   writeFileSync(resolve(source, 'posts/example.md'), note)
   writeFileSync(resolve(source, 'portfolio/example/README.md'), note)
+  const links = '[[example|Article]] [[portfolio/example/README.md|Project]]'
+  writeFileSync(resolve(source, 'posts/2026/linked.md'), links)
   execFileSync('magick', ['-size', '8x4', 'xc:blue', resolve(source, 'assets/photo.png')])
   const original = readFileSync(resolve(source, 'assets/photo.png'))
 
@@ -84,9 +87,26 @@ test('prepares content before rendering and stops on a broken image', (t) => {
   )
   assert.deepEqual(readFileSync(resolve(source, 'assets/photo.png')), original)
   assert.equal(readFileSync(resolve(source, 'posts/example.md'), 'utf8'), note)
+  assert.equal(
+    readFileSync(resolve(directory, 'apps/web/content/post/2026/linked.md'), 'utf8'),
+    '[Article](</blog/example>) [Project](</portfolio/example>)',
+  )
+  assert.equal(readFileSync(resolve(source, 'posts/2026/linked.md'), 'utf8'), links)
   const cached = run()
   assert.equal(cached.status, 0, cached.stderr)
   assert.match(cached.stdout, /images: 0 converted, 1 cached/)
+
+  writeFileSync(resolve(source, 'posts/2026/example.md'), 'Duplicate filename')
+  const ambiguous = run()
+  assert.notEqual(ambiguous.status, 0)
+  assert.match(ambiguous.stderr, /Note link must match exactly one page: example/)
+  writeFileSync(resolve(source, 'posts/2026/linked.md'), '[[posts/example.md|Exact path]]')
+  const explicit = run()
+  assert.equal(explicit.status, 0, explicit.stderr)
+  assert.equal(
+    readFileSync(resolve(directory, 'apps/web/content/post/2026/linked.md'), 'utf8'),
+    '[Exact path](</blog/example>)',
+  )
 
   writeFileSync(resolve(source, 'posts/example.md'), note.replaceAll('photo.png', 'missing.png'))
   const failure = run()

@@ -6,6 +6,7 @@ export function prepareMarkdown(
   markdown: string,
   assets: string[],
   imageUrls = new Map<string, string>(),
+  noteUrls = new Map<string, string | null>(),
 ): string {
   const frontmatter = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
   let header = frontmatter?.[0] ?? ''
@@ -63,11 +64,18 @@ export function prepareMarkdown(
     return `![${alt}](<${url}>)${size}`
   }
 
+  const convertLink = (target: string, label = target) => {
+    const path = target.replace(/\.md$/, '').replace(/^\//, '')
+    const url = noteUrls.get(path)
+    if (!url) throw new Error(`Note link must match exactly one page: ${target}`)
+    return `[${label.replace(/[\\[\]]/g, '\\$&')}](<${url}>)`
+  }
+
   // shortcut: handles standard fences and single-line code spans; use an AST parser for nested Markdown.
   let fence = ''
   const urlPattern = imageUrls.size ? `|(?:${assetUrlPattern(imageUrls)})(?=$|[\\s<>"')\\]?#])` : ''
   const inlinePattern = new RegExp(
-    /(`+).*?\1|(?<!\\)!\[\[([^|\]\n]+)(?:\|([^\]\n]*))?\]\]/.source + urlPattern,
+    /(`+).*?\1|(?<![\\!])(!?)\[\[([^|\]\n]+)(?:\|([^\]\n]*))?\]\]/.source + urlPattern,
     'g',
   )
   const body = markdown.slice(frontmatter?.[0].length ?? 0)
@@ -84,11 +92,19 @@ export function prepareMarkdown(
     if (/^( {4}|\t)/.test(line)) return line
     return line.replace(
       inlinePattern,
-      (match, code: string | undefined, target: string, option: string | undefined) =>
+      (
+        match,
+        code: string | undefined,
+        embed: string | undefined,
+        target: string,
+        option: string | undefined,
+      ) =>
         code
           ? match
           : target
-            ? convertImage(match, target, option)
+            ? embed
+              ? convertImage(match, target, option)
+              : convertLink(target, option)
             : rewriteAssetUrls(match, imageUrls),
     )
   })

@@ -7,7 +7,7 @@ import {
   readFileSync,
   writeFileSync,
 } from 'node:fs'
-import { resolve, dirname, relative } from 'node:path'
+import { resolve, dirname, relative, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { prepareMarkdown } from './prepare-markdown.js'
 import { optimizeImages, rewriteAssetUrls } from './optimize-images.js'
@@ -55,19 +55,43 @@ const assets = existsSync(assetsDir)
         relative(assetsDir, resolve(entry.parentPath, entry.name)).replaceAll('\\', '/'),
       )
   : []
-for (const directory of [resolve(webDir, 'content/post'), portfolioDst]) {
-  if (!existsSync(directory)) continue
-  for (const entry of readdirSync(directory, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.md')) continue
-    const path = resolve(entry.parentPath, entry.name)
-    try {
-      writeFileSync(path, prepareMarkdown(readFileSync(path, 'utf8'), assets, imageUrls))
-    } catch (error) {
-      throw new Error(`Failed to import ${path}`, { cause: error })
-    }
+const notes = ['posts', 'portfolio'].flatMap((section) => {
+  const directory = resolve(contentDir, section)
+  if (!existsSync(directory)) return []
+  return readdirSync(directory, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    .map((entry) => {
+      const path = relative(contentDir, resolve(entry.parentPath, entry.name)).replaceAll('\\', '/')
+      const generated = path
+        .replace(/^posts\//, 'post/')
+        .replace(/^(portfolio\/[^/]+)\/README\.md$/, '$1/index.md')
+      // shortcut: content filenames use URL slugs; revisit if Nuxt path conventions change.
+      const url =
+        '/' +
+        generated
+          .replace(/^post\//, 'blog/')
+          .replace(/\.md$/, '')
+          .replace(/\/index$/, '')
+          .toLowerCase()
+      return { path, generated, url }
+    })
+})
+const noteUrls = new Map<string, string | null>()
+for (const { path, url } of notes) {
+  const stem = path.replace(/\.md$/, '')
+  for (const key of [stem, basename(stem)]) {
+    noteUrls.set(key, noteUrls.has(key) && noteUrls.get(key) !== url ? null : url)
   }
 }
-console.log('✓ Obsidian images and dates normalized')
+for (const { generated } of notes) {
+  const path = resolve(webDir, 'content', generated)
+  try {
+    writeFileSync(path, prepareMarkdown(readFileSync(path, 'utf8'), assets, imageUrls, noteUrls))
+  } catch (error) {
+    throw new Error(`Failed to import ${path}`, { cause: error })
+  }
+}
+console.log('✓ Obsidian images, links and dates normalized')
 
 for (const path of [
   resolve(webDir, 'app/app.config.ts'),

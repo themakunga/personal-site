@@ -51,6 +51,19 @@ source notes. Bare filenames must identify a unique image under `assets/`; use a
 `assets/subfolder/image.png` path for duplicate filenames. Missing or ambiguous images stop
 the import with an error. Code examples and note embeds are preserved.
 
+Obsidian note links also become links to the corresponding blog or portfolio page:
+
+```markdown
+[[las-aventuras-de-nico-pt1|Part one]]
+[[posts/2026/las-aventuras-de-nico-pt1.md|Part one]]
+[[portfolio/keyboards/README|Keyboards]]
+```
+
+Bare note names must be unique across posts and portfolio. Use a full vault-relative path
+when names repeat. Missing or ambiguous targets stop the import. Source filenames should
+use the site's existing lowercase URL-slug convention. Code examples, escaped links and
+note embeds remain unchanged; heading/block links and `obsidian://` URLs are not converted.
+
 Standard Markdown with a root-relative `/assets/` URL also works. Encode spaces as `%20`:
 
 ```markdown
@@ -58,7 +71,7 @@ Standard Markdown with a root-relative `/assets/` URL also works. Encode spaces 
 ```
 
 `scripts/prepare-content.ts` generates the site configuration, imports the content and converts
-Obsidian images and dates before the web app's `dev`, `build` and `generate` commands start.
+Obsidian images, note links and dates before the web app's `dev`, `build` and `generate` commands start.
 Docker uses the same pipeline. To prepare content manually from the repository root:
 
 ```sh

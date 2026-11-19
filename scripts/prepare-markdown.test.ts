@@ -38,11 +38,15 @@ test('leaves Markdown, note embeds, code, escapes and frontmatter intact', () =>
     '![Photo](/assets/photo.jpg)',
     '![[Another note]]',
     '![[file.pdf]]',
+    '`[[missing]]`',
+    '\\[[missing]]',
+    '    [[missing]]',
     '`![[missing.png]]`',
     '\\![[missing.png]]',
     '    ![[missing.png]]',
     '````md',
     '![[missing.png]]',
+    '[[missing]]',
     '```',
     '![[missing.png]]',
     '````',
@@ -51,6 +55,30 @@ test('leaves Markdown, note embeds, code, escapes and frontmatter intact', () =>
     '~~~',
   ].join('\n')
   assert.equal(prepareMarkdown(source, assets), source)
+})
+
+test('converts Obsidian note links and labels to public routes', () => {
+  const urls = new Map([
+    ['first-post', '/blog/2026/first-post'],
+    ['posts/2026/first-post', '/blog/2026/first-post'],
+    ['portfolio/example/README', '/portfolio/example'],
+  ])
+  assert.equal(
+    prepareMarkdown(
+      '[[first-post]] [[posts/2026/first-post.md|Part one]] [[/portfolio/example/README|Project]]',
+      [],
+      new Map(),
+      urls,
+    ),
+    '[first-post](</blog/2026/first-post>) [Part one](</blog/2026/first-post>) [Project](</portfolio/example>)',
+  )
+  for (const target of ['missing', 'duplicate', 'https://example.com', '../first-post']) {
+    assert.throws(
+      () =>
+        prepareMarkdown(`[[${target}]]`, [], new Map(), new Map([...urls, ['duplicate', null]])),
+      /Note link must match exactly one page/,
+    )
+  }
 })
 
 test('rejects missing, ambiguous and escaping image paths', () => {
