@@ -25,8 +25,9 @@ updated_at: 2026-11-08T12:30:00-03:00
 Initial page data is included in the HTML to avoid a separate payload preload and fetch.
 Extracted `_payload.json` files remain available for client-side navigation.
 
-The home page features the latest entry with its frontmatter `image` and title, followed by
-the next five entries without repeating the featured post. Save the hero file in
+The home page features the latest published `featured: true` entry with its frontmatter
+`image` and title. Image tiles and the latest-entry list exclude posts already shown above.
+Save the hero file in
 `personal-content/assets/` and reference its public path in the post:
 
 ```yaml
@@ -356,10 +357,12 @@ consent flow and configuring the exact callback in its developer console.
 ## Homepage
 
 Set `featured: true` in post frontmatter to select the latest published featured post for the
-hero. Below it, six image tiles show the latest published posts with a nonempty `image`.
-The final list uses `blog.postPerPage` (default: five) and static `/page/2`, `/page/3` routes.
+hero. Below it, up to six image tiles show the latest published posts with a nonempty `image`,
+excluding the featured post. The final list excludes the featured post and the displayed image
+tiles, using `blog.postPerPage` (default: five) and static `/page/2`, `/page/3` routes.
 All sections sort by `updated_at` descending, then path descending, and exclude drafts.
-The sections are independent; posts can appear in more than one section.
+Pagination counts only the remaining entries. Posts beyond the six image tiles remain in the
+final list, and the blog, category, tag and RSS views still include all published posts.
 
 Run `python3 scripts/test_homepage.py` after installing the existing dependencies to generate a
 fixture site and check selection, prerendered pagination and all four flat comment flag combinations.

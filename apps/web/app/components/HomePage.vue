@@ -46,7 +46,7 @@
           </NuxtLink>
         </li>
       </ul>
-      <p v-if="!pagePosts.length">Aún no hay entradas publicadas.</p>
+      <p v-if="!pagePosts.length">No hay más entradas.</p>
       <nav v-if="totalPages > 1" class="home__pagination" aria-label="Paginación de entradas">
         <NuxtLink v-if="page > 1" :to="pageUrl(page - 1)" rel="prev">← Anterior</NuxtLink>
         <NuxtLink
@@ -82,10 +82,21 @@ if (error.value) throw createError(error.value)
 
 const featuredPost = computed(() => posts.value?.find((post) => post.featured))
 const imagePosts = computed(
-  () => posts.value?.filter((post) => post.image?.trim()).slice(0, 6) ?? [],
+  () =>
+    posts.value
+      ?.filter((post) => post.path !== featuredPost.value?.path && post.image?.trim())
+      .slice(0, 6) ?? [],
 )
-const totalPages = computed(() => Math.max(1, Math.ceil((posts.value?.length ?? 0) / pageSize)))
-const pagePosts = computed(() => posts.value?.slice((page - 1) * pageSize, page * pageSize) ?? [])
+const latestPosts = computed(
+  () =>
+    posts.value?.filter(
+      (post) =>
+        post.path !== featuredPost.value?.path &&
+        !imagePosts.value.some((imagePost) => imagePost.path === post.path),
+    ) ?? [],
+)
+const totalPages = computed(() => Math.max(1, Math.ceil(latestPosts.value.length / pageSize)))
+const pagePosts = computed(() => latestPosts.value.slice((page - 1) * pageSize, page * pageSize))
 if (page > totalPages.value) throw createError({ statusCode: 404, statusMessage: 'Page not found' })
 
 const pageUrl = (number: number) => `${number === 1 ? '/' : `/page/${number}`}#latest-posts`

@@ -71,7 +71,7 @@ def main():
                 "title": f"Post {index:02}", "created_at": f"2026-11-11T{index:02}:00:00Z",
                 "featured": index in (8, 10, 13), "draft": index == 13,
                 "updated_at": "2026-11-11T12:30:00Z" if index == 0 else f"2026-11-11T{12 if index == 11 else index:02}:00:00Z",
-                "image": "/assets/hero.svg" if 5 <= index <= 11 or index == 13 else "  ",
+                "image": "/assets/hero.svg" if 4 <= index <= 11 or index == 13 else "  ",
                 "show_comments": index in (1, 3), "enable_comments": index in (2, 3),
                 "category": "sorting", "tags": ["sorting"],
             }
@@ -99,20 +99,26 @@ def main():
                     "show_comments": index in (1, 3), "enable_comments": index in (2, 3),
                 }
             path = lambda index: f"/blog/post-{index:02}"
-            all_posts = []
-            for number, indices in ((1, [0, 12, 11, 10, 9]), (2, range(8, 3, -1)), (3, range(3, 0, -1))):
+            latest_posts = []
+            for number, indices in ((1, [0, 12, 4, 3, 2]), (2, [1])):
                 route = "/" if number == 1 else f"/page/{number}"
                 html = (public / route.lstrip("/") / "index.html").read_text()
                 home = Home(html)
                 assert home.posts["featured-post"] == [path(10)], home.posts
-                assert home.posts["hero-tiles"] == [path(i) for i in range(11, 5, -1)], home.posts
+                assert home.posts["hero-tiles"] == [path(i) for i in (11, 9, 8, 7, 6, 5)], home.posts
                 assert home.posts["latest-posts"] == [path(i) for i in indices], home.posts
+                sections = [set(posts) for posts in home.posts.values()]
+                assert not (sections[0] & sections[1] or sections[0] & sections[2] or sections[1] & sections[2]), home.posts
                 assert home.current == [route + "#latest-posts"], home.current
-                assert all(f"/page/{page}#latest-posts" in home.links for page in (2, 3))
+                assert "/page/2#latest-posts" in home.links
+                assert "/page/3#latest-posts" not in home.links
                 assert "/#latest-posts" in home.links
                 assert Page(html).rendered_path == route, "Incorrect prerendered route"
-                all_posts.extend(home.posts["latest-posts"])
-            assert all_posts == [path(0), *[path(i) for i in range(12, 0, -1)]]
+                latest_posts.extend(home.posts["latest-posts"])
+            assert latest_posts == [path(i) for i in (0, 12, 4, 3, 2, 1)]
+            all_posts = [path(0), *[path(i) for i in range(12, 0, -1)]]
+            assert set(all_posts) == set(latest_posts + home.posts["featured-post"] + home.posts["hero-tiles"])
+            assert not (public / "page/3/index.html").exists(), "Empty pagination page was generated"
             for route in ("blog", "categories/sorting", "tags/sorting"):
                 page = Home((public / route / "index.html").read_text())
                 links = [link for link in page.links if link.startswith("/blog/")]
