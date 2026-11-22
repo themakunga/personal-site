@@ -1,5 +1,8 @@
 # Personal site
 
+![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?style=flat-square&logo=nuxt&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+
 Nuxt website and API workspace with a Markdown content pipeline. The guides below
 cover local development, content processing and production operation.
 
