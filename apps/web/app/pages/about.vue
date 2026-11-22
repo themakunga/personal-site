@@ -1,6 +1,13 @@
 <template>
   <div class="about">
     <h2 class="page-title">About</h2>
+    <img
+      src="/images/about.jpg"
+      alt="Nicolas posing at the Evil Dead exhibit at The Mystic Museum"
+      width="886"
+      height="886"
+      class="about__photo"
+    />
     <p class="about__bio">{{ config.site.description }}</p>
 
     <div class="about__contact">
@@ -26,6 +33,14 @@ useSeoMeta({
   font-size: 1rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.about__photo {
+  width: 100%;
+  max-width: 28rem;
+  height: auto;
+  border-radius: 6px;
   margin-bottom: 1.5rem;
 }
 
