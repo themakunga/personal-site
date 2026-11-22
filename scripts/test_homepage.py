@@ -150,7 +150,7 @@ def main():
             assert reader.count('class="reader__post"') == 13
             assert re.findall(r'<h2[^>]*>\s*<a[^>]*href="(/blog/[^\"]+)"', reader) == all_posts
             assert "Final RSS body marker." in reader
-            assert 'href="https://example.com/blog/post-01"' in reader
+            assert 'href="/blog/post-01"' in reader
             assert "Post 13" not in reader, "Draft content leaked into reading mode"
             assert 'value="https://example.com/rss.xml"' in reader
             home_html = (public / "index.html").read_text()

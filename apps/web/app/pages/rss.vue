@@ -43,6 +43,7 @@ const readingPosts = computed(() =>
     body: absoluteContentUrls(
       post.body,
       new URL(post.path.replace(/^\/post/, '/blog'), config.site.url).href,
+      'relative',
     ),
   })),
 )

@@ -1,6 +1,41 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { renderFeedContent } from '../apps/web/server/utils/feed-content.ts'
+import { absoluteContentUrls } from '../apps/web/app/utils/content-urls.ts'
+
+test('reading mode keeps same-origin links relative for Nuxt payload prefetch', () => {
+  const body: Parameters<typeof absoluteContentUrls>[0] = {
+    type: 'minimark',
+    value: [
+      ['a', { href: './next?one=1#section' }, 'Next'],
+      ['a', { href: 'https://example.com/blog/next' }, 'Absolute internal link'],
+      ['a', { href: '#section' }, 'Heading in the original article'],
+      ['a', { href: 'https://other.example/blog/next' }, 'External link'],
+      ['a', { href: 'mailto:author@example.com' }, 'Email'],
+      ['a', { href: 'javascript:alert(1)' }, 'Unsafe link'],
+      ['a', { href: 'blob:https://example.com/unsafe' }, 'Unsupported same-origin scheme'],
+      ['a', { href: 'https://example.com//other.example/path' }, 'Double slash path'],
+      ['img', { src: '/assets/photo.webp' }],
+    ],
+  }
+  const original = structuredClone(body)
+  const result = absoluteContentUrls(body, 'https://example.com/blog/article', 'relative')
+  assert.deepEqual(
+    result.value.map((node) => node[1]),
+    [
+      { href: '/blog/next?one=1#section' },
+      { href: '/blog/next' },
+      { href: '/blog/article#section' },
+      { href: 'https://other.example/blog/next' },
+      { href: 'mailto:author@example.com' },
+      { href: undefined },
+      { href: undefined },
+      { href: 'https://example.com//other.example/path' },
+      { src: 'https://example.com/assets/photo.webp' },
+    ],
+  )
+  assert.deepEqual(body, original)
+})
 
 test('renders complete formatted content with absolute article links and images', async () => {
   const html = await renderFeedContent(

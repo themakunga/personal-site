@@ -101,6 +101,10 @@ dates are included, ordered by latest update; drafts are excluded from both view
 HTML alternate-feed links let RSS apps discover the XML feed from `/rss` or any normal site page.
 Both views regenerate with the static site when content changes.
 
+Reading-mode links within the site use root-relative paths so Nuxt can prefetch their page
+data. Relative article links and heading fragments still resolve against their original
+article; external links and the XML feed keep absolute URLs.
+
 Caddy serves each route's generated `index.html` before falling back to Nuxt's `200.html`,
 so direct loads and reloads retain the requested page. Publish a new web image when Caddy changes.
 Check the served site, including adjacent links, reload payloads and RSS discovery, with:
