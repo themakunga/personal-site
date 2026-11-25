@@ -1,4 +1,12 @@
-# Local development with Docker
+# Personal site
+
+![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?style=flat-square&logo=nuxt&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+
+Nuxt website and API workspace with a Markdown content pipeline. The guides below
+cover local development, content processing and production operation.
+
+## Local development with Docker
 
 Keep the `personal-content` repository next to this one (`../personal-content`). Docker and Docker Compose are required.
 
@@ -383,3 +391,16 @@ Diagrams use the site's Tokyo Night Storm palette for nodes, labels, arrows and 
 Code blocks use Shiki's Tokyo Night syntax colors on the Storm background, with a visible
 language header (`text` for fences without a language). The Lua, Vim and Nix grammars used
 by the portfolio are included alongside the standard web languages.
+
+## Repository reference
+
+| Path                                                   | Purpose                                 |
+| ------------------------------------------------------ | --------------------------------------- |
+| [`apps/`](apps/)                                       | Application workspaces                  |
+| [`scripts/`](scripts/)                                 | Maintenance and validation commands     |
+| [`Makefile`](Makefile)                                 | Documented build and validation targets |
+| [`COMMENTS_SETUP.md`](COMMENTS_SETUP.md)               | Project reference                       |
+| [`docker-compose.local.yml`](docker-compose.local.yml) | Project reference                       |
+
+The default branch is `main`. Use the tracked manifests and scripts above
+when preparing changes; keep local credentials and generated files out of commits.
